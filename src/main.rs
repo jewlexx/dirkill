@@ -8,6 +8,10 @@ mod app;
 struct DirKillArgs {}
 
 fn main() -> anyhow::Result<()> {
+    std::panic::set_hook(Box::new(|_| {
+        disable_raw_mode().unwrap();
+    }));
+
     let args = DirKillArgs::parse();
 
     let mut app = app::App::new();
@@ -17,8 +21,6 @@ fn main() -> anyhow::Result<()> {
     app.run()?;
 
     disable_raw_mode()?;
-
-    println!("Hello, world!");
 
     Ok(())
 }

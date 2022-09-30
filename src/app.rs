@@ -1,4 +1,4 @@
-use std::{error::Error, io, path::PathBuf};
+use std::{error::Error, io, path::PathBuf, time::Duration};
 
 use crossterm::{
     event::{self, DisableMouseCapture, EnableMouseCapture, Event, KeyCode},
@@ -10,7 +10,7 @@ use tui::{
     layout::{Constraint, Direction, Layout},
     style::{Color, Modifier, Style},
     text::{Span, Spans},
-    widgets::{Block, Borders, Tabs},
+    widgets::{Block, Borders, Gauge, Tabs},
     Frame, Terminal,
 };
 
@@ -44,12 +44,14 @@ impl App {
         loop {
             terminal.draw(|f| self.ui(f))?;
 
-            if let Event::Key(key) = event::read()? {
-                match key.code {
-                    KeyCode::Char('q') => return Ok(()),
-                    KeyCode::Down => self.next(),
-                    KeyCode::Up => self.previous(),
-                    _ => {}
+            if event::poll(Duration::from_millis(16))? {
+                if let Event::Key(key) = event::read()? {
+                    match key.code {
+                        KeyCode::Char('q') => return Ok(()),
+                        KeyCode::Down => self.next(),
+                        KeyCode::Up => self.previous(),
+                        _ => {}
+                    }
                 }
             }
         }
@@ -57,20 +59,21 @@ impl App {
 
     fn ui<B: Backend>(&mut self, frame: &mut Frame<B>) {
         match self.files {
-            Some(ref files) => {}
+            Some(ref files) => {
+                println!("Is Some");
+            }
             None => {
                 let chunks = Layout::default()
                     .direction(Direction::Vertical)
-                    .constraints(
-                        [Constraint::Percentage(*self.loader_percent.get() as u16)].as_ref(),
-                    )
+                    .margin(5)
+                    .constraints([Constraint::Length(3), Constraint::Min(0)].as_ref())
                     .split(frame.size());
 
-                let block = Block::default().borders(Borders::ALL).title("Loading");
+                let gauge = Gauge::default()
+                    .gauge_style(Style::default().fg(Color::Green))
+                    .percent(*self.loader_percent.bump() as u16);
 
-                frame.render_widget(block, chunks[0]);
-
-                self.loader_percent.bump();
+                frame.render_widget(gauge, chunks[0]);
             }
         };
     }

@@ -4,6 +4,7 @@ use num_traits::Num;
 
 pub trait IntWrapType<T: std::cmp::PartialOrd<T>>:
     Num
+    + Copy
     + Clone
     + std::ops::AddAssign<usize>
     + std::ops::SubAssign<usize>
@@ -35,36 +36,30 @@ impl<T: IntWrapType<T>> IntWrap<T> {
     pub fn increase(&mut self, increase: usize) -> &T {
         self.0 += increase;
 
-        if self.1.contains(&self.0) {
-            &self.0
-        } else {
-            self.0 -= increase;
-
-            &self.1.end
+        if !self.1.contains(&self.0) {
+            self.0 = self.1.start;
         }
+
+        &self.0
     }
 
     pub fn decrease(&mut self, decrease: usize) -> &T {
         self.0 -= decrease;
 
-        if self.1.contains(&self.0) {
-            &self.0
-        } else {
-            self.0 += decrease;
-
-            &self.1.start
+        if !self.1.contains(&self.0) {
+            self.0 = self.1.end;
         }
+
+        &self.0
     }
 
     pub fn bump(&mut self) -> &T {
         self.0 += 1;
 
-        if self.1.contains(&self.0) {
-            &self.0
-        } else {
-            self.0 -= 1;
-
-            &self.1.end
+        if !self.1.contains(&self.0) {
+            self.0 = self.1.start;
         }
+
+        &self.0
     }
 }
