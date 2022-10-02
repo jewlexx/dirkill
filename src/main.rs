@@ -8,7 +8,15 @@ mod app;
 
 #[derive(Debug, Parser)]
 #[clap(name = "Dir Kill", version, author, about)]
-struct DirKillArgs {}
+struct DirKillArgs {
+    #[clap(
+        short,
+        long,
+        default_value = "node_modules",
+        help = "The directory to remove"
+    )]
+    target: String,
+}
 
 fn pre_exit() -> anyhow::Result<()> {
     use crossterm::{execute, terminal::LeaveAlternateScreen};
