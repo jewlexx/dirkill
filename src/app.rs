@@ -15,7 +15,7 @@ use tui::{
     Frame, Terminal,
 };
 
-pub static FILES: Mutex<Option<Vec<PathBuf>>> = Mutex::new(None);
+pub static FILES: Mutex<Option<Vec<walkdir::DirEntry>>> = Mutex::new(None);
 
 pub struct App {
     index: usize,
@@ -68,11 +68,11 @@ impl App {
         Ok(())
     }
 
-    pub fn get_files(&self) -> Option<Vec<PathBuf>> {
+    pub fn get_files(&self) -> Option<Vec<walkdir::DirEntry>> {
         FILES.lock().clone()
     }
 
-    pub fn set_files(&mut self, files: Vec<PathBuf>) {
+    pub fn set_files(&mut self, files: Vec<walkdir::DirEntry>) {
         *FILES.lock() = Some(files);
     }
 

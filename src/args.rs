@@ -2,7 +2,7 @@ use std::ffi::OsString;
 
 use clap::Parser;
 
-#[derive(Debug, Parser)]
+#[derive(Debug, Clone, Parser)]
 #[clap(name = "Dir Kill", version, author, about)]
 pub struct DirKillArgs {
     #[clap(
