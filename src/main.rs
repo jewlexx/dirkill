@@ -1,7 +1,5 @@
 use std::thread;
 
-use parking_lot::Mutex;
-
 use app::App;
 use clap::Parser;
 use crossterm::terminal::disable_raw_mode;
