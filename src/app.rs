@@ -16,9 +16,9 @@ use tui::{
 
 #[derive(Default)]
 pub struct App {
-    pub files: Option<Vec<PathBuf>>,
-    pub index: usize,
-    pub loader_percent: dirlib::IntWrap<usize>,
+    files: Option<Vec<PathBuf>>,
+    index: usize,
+    loader_percent: dirlib::IntWrap<usize>,
 }
 
 impl App {
@@ -62,6 +62,14 @@ impl App {
         crate::pre_exit()?;
 
         Ok(())
+    }
+
+    pub fn get_files(&self) -> Option<&Vec<PathBuf>> {
+        self.files.as_ref()
+    }
+
+    pub fn set_files(&mut self, files: Vec<PathBuf>) {
+        self.files = Some(files);
     }
 
     fn ui<B: Backend>(&mut self, frame: &mut Frame<B>) {
