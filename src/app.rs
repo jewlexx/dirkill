@@ -12,7 +12,7 @@ use tui::{
     layout::{Constraint, Direction, Layout},
     style::{Color, Modifier, Style},
     text::{Span, Spans, Text},
-    widgets::{Block, Borders, Gauge, Paragraph, Tabs},
+    widgets::{Block, Borders, Gauge, List, ListItem, Paragraph, Row, Table, Tabs},
     Frame, Terminal,
 };
 
@@ -77,8 +77,26 @@ impl App {
             .split(frame.size());
 
         match FILES.lock().as_ref() {
-            Some(files) => {
-                println!("Is Some");
+            Some(files_ref) => {
+                let block = Block::default()
+                    .title("Discovered Paths")
+                    .borders(Borders::ALL);
+
+                let mut list_entries = files_ref
+                    .iter()
+                    .map(|dir| {
+                        Row::new([
+                            dir.entry.path().to_string_lossy().to_string(),
+                            bytesize::ByteSize(dir.size).to_string(),
+                        ])
+                    })
+                    .collect::<Vec<_>>();
+
+                list_entries.insert(0, Row::new(["Path", "Size"]));
+
+                let table = Table::new(list_entries).block(block);
+
+                frame.render_widget(table, chunks[0]);
             }
             None => {
                 let mut text = "Loading Directory".to_owned();
