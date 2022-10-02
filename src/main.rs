@@ -1,7 +1,14 @@
+use std::thread;
+
+use parking_lot::Mutex;
+
+use app::App;
 use clap::Parser;
 use crossterm::terminal::disable_raw_mode;
 
 mod app;
+
+static APP: Mutex<App> = Mutex::new(App::new());
 
 #[derive(Debug, Parser)]
 #[clap(name = "Dir Kill", version, author, about)]
@@ -22,9 +29,21 @@ fn main() -> anyhow::Result<()> {
 
     let args = DirKillArgs::parse();
 
-    let mut app = app::App::new();
+    let ui_thread = thread::spawn(|| {
+        APP.lock().run()?;
 
-    app.run()?;
+        anyhow::Ok(())
+    });
+
+    thread::spawn(|| {
+        let app = APP.lock();
+
+        println!("Able to lock app");
+    })
+    .join()
+    .unwrap();
+
+    ui_thread.join().unwrap()?;
 
     Ok(())
 }

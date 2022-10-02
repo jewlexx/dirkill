@@ -114,6 +114,7 @@ dependencies = [
  "crossterm",
  "dunce",
  "num-traits",
+ "parking_lot",
  "tui",
  "walkdir",
 ]

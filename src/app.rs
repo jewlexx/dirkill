@@ -5,6 +5,7 @@ use crossterm::{
     execute,
     terminal::{enable_raw_mode, EnterAlternateScreen},
 };
+use parking_lot::Mutex;
 use tui::{
     backend::{Backend, CrosstermBackend},
     layout::{Constraint, Direction, Layout},
@@ -14,8 +15,9 @@ use tui::{
     Frame, Terminal,
 };
 
+pub static FILES: Mutex<Option<Vec<PathBuf>>> = Mutex::new(None);
+
 pub struct App {
-    files: Option<Vec<PathBuf>>,
     index: usize,
     loader_percent: dirlib::IntWrap<usize>,
 }
@@ -23,21 +25,20 @@ pub struct App {
 impl App {
     pub const fn new() -> Self {
         Self {
-            files: None,
             index: 0,
             loader_percent: dirlib::IntWrap::new(0, 0..100),
         }
     }
 
     pub fn next(&mut self) {
-        self.index = (self.index + 1) % self.files.as_ref().map(|x| x.len()).unwrap_or_default();
+        self.index = (self.index + 1) % FILES.lock().as_ref().map(|x| x.len()).unwrap_or_default();
     }
 
     pub fn previous(&mut self) {
         if self.index > 0 {
             self.index -= 1;
         } else {
-            self.index = self.files.as_ref().map(|x| x.len()).unwrap_or_default();
+            self.index = FILES.lock().as_ref().map(|x| x.len()).unwrap_or_default();
         }
     }
 
@@ -67,16 +68,16 @@ impl App {
         Ok(())
     }
 
-    pub fn get_files(&self) -> Option<&Vec<PathBuf>> {
-        self.files.as_ref()
+    pub fn get_files(&self) -> Option<Vec<PathBuf>> {
+        FILES.lock().clone()
     }
 
     pub fn set_files(&mut self, files: Vec<PathBuf>) {
-        self.files = Some(files);
+        *FILES.lock() = Some(files);
     }
 
     fn ui<B: Backend>(&mut self, frame: &mut Frame<B>) {
-        match self.files {
+        match FILES.lock().as_ref() {
             Some(ref files) => {
                 println!("Is Some");
             }
