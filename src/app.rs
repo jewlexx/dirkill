@@ -11,8 +11,8 @@ use tui::{
     backend::{Backend, CrosstermBackend},
     layout::{Constraint, Direction, Layout},
     style::{Color, Modifier, Style},
-    text::{Span, Spans},
-    widgets::{Block, Borders, Gauge, Tabs},
+    text::{Span, Spans, Text},
+    widgets::{Block, Borders, Gauge, Paragraph, Tabs},
     Frame, Terminal,
 };
 
@@ -27,7 +27,7 @@ impl App {
     pub const fn new() -> Self {
         Self {
             index: 0,
-            loader_percent: dirlib::IntWrap::new(0, 0..100),
+            loader_percent: dirlib::IntWrap::new(0, 0..40),
         }
     }
 
@@ -81,9 +81,12 @@ impl App {
                 println!("Is Some");
             }
             None => {
-                let gauge = Gauge::default()
-                    .gauge_style(Style::default().fg(Color::Green))
-                    .percent(*self.loader_percent.bump() as u16);
+                let mut text = "Loading Directory".to_owned();
+
+                let dots = ".".repeat(*self.loader_percent.bump() / 10);
+                text.push_str(&dots);
+
+                let gauge = Paragraph::new(text);
 
                 frame.render_widget(gauge, chunks[0]);
             }
