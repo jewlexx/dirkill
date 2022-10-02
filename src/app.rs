@@ -5,6 +5,7 @@ use crossterm::{
     execute,
     terminal::{enable_raw_mode, EnterAlternateScreen},
 };
+use dirlib::DirEntry;
 use parking_lot::Mutex;
 use tui::{
     backend::{Backend, CrosstermBackend},
@@ -15,7 +16,7 @@ use tui::{
     Frame, Terminal,
 };
 
-pub static FILES: Mutex<Option<Vec<walkdir::DirEntry>>> = Mutex::new(None);
+pub static FILES: Mutex<Option<Vec<DirEntry>>> = Mutex::new(None);
 
 pub struct App {
     index: usize,
@@ -68,11 +69,11 @@ impl App {
         Ok(())
     }
 
-    pub fn get_files(&self) -> Option<Vec<walkdir::DirEntry>> {
+    pub fn get_files(&self) -> Option<Vec<DirEntry>> {
         FILES.lock().clone()
     }
 
-    pub fn set_files(&mut self, files: Vec<walkdir::DirEntry>) {
+    pub fn set_files(&mut self, files: Vec<DirEntry>) {
         *FILES.lock() = Some(files);
     }
 

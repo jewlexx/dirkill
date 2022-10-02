@@ -62,13 +62,39 @@ impl<T: IntWrapType<T>> IntWrap<T> {
     }
 }
 
-pub fn get_files(args: &DirKillArgs, search_dir: impl AsRef<Path>) -> Vec<walkdir::DirEntry> {
+#[derive(Debug, Clone)]
+pub struct DirEntry {
+    pub size: u64,
+    pub entry: walkdir::DirEntry,
+}
+
+impl From<walkdir::DirEntry> for DirEntry {
+    fn from(entry: walkdir::DirEntry) -> Self {
+        let meta = entry.metadata().unwrap();
+
+        let size = if meta.is_dir() {
+            fs_extra::dir::get_size(entry.path()).unwrap()
+        } else {
+            meta.len()
+        };
+
+        Self { size, entry }
+    }
+}
+
+pub fn get_files(args: &DirKillArgs, search_dir: impl AsRef<Path>) -> Vec<DirEntry> {
     let search_dir = search_dir.as_ref();
     let target_dir = &args.target;
 
-    walkdir::WalkDir::new(search_dir)
+    let mut entries: Vec<DirEntry> = walkdir::WalkDir::new(search_dir)
+        .follow_links(false)
         .into_iter()
         .filter_map(|entry| entry.ok())
-        .filter(|entry| entry.path().ends_with(target_dir))
-        .collect()
+        .map(|entry| -> DirEntry { entry.into() })
+        .filter(|entry| entry.entry.path().ends_with(target_dir))
+        .collect();
+
+    entries.sort_by(|a, b| a.size.cmp(&b.size));
+
+    entries
 }
