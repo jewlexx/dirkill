@@ -70,17 +70,17 @@ impl App {
     }
 
     fn ui<B: Backend>(&mut self, frame: &mut Frame<B>) {
+        let chunks = Layout::default()
+            .direction(Direction::Vertical)
+            .margin(5)
+            .constraints([Constraint::Length(3), Constraint::Min(0)].as_ref())
+            .split(frame.size());
+
         match FILES.lock().as_ref() {
             Some(files) => {
                 println!("Is Some");
             }
             None => {
-                let chunks = Layout::default()
-                    .direction(Direction::Vertical)
-                    .margin(5)
-                    .constraints([Constraint::Length(3), Constraint::Min(0)].as_ref())
-                    .split(frame.size());
-
                 let gauge = Gauge::default()
                     .gauge_style(Style::default().fg(Color::Green))
                     .percent(*self.loader_percent.bump() as u16);
