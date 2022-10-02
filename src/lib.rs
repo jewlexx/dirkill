@@ -1,6 +1,9 @@
 use std::ops::Range;
 
+use args::DirKillArgs;
 use num_traits::Num;
+
+pub mod args;
 
 pub trait IntWrapType<T: std::cmp::PartialOrd<T>>:
     Num
@@ -59,4 +62,4 @@ impl<T: IntWrapType<T>> IntWrap<T> {
     }
 }
 
-pub fn get_files() {}
+pub fn get_files(args: DirKillArgs) {}
