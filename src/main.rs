@@ -27,7 +27,9 @@ fn main() -> anyhow::Result<()> {
     let mut app = App::new();
 
     let files_thread = thread::spawn(move || {
-        *FILES.lock() = Some(dirlib::get_files(&args, qualified_dir));
+        let files = dirlib::get_files(&args, qualified_dir);
+        // println!("{:?}", files);
+        *FILES.lock() = Some(files);
     });
 
     app.run()?;

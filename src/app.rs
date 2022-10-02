@@ -73,7 +73,7 @@ impl App {
         let chunks = Layout::default()
             .direction(Direction::Vertical)
             .margin(5)
-            .constraints([Constraint::Length(3), Constraint::Min(0)].as_ref())
+            .constraints([Constraint::Min(0)].as_ref())
             .split(frame.size());
 
         match FILES.lock().as_ref() {
@@ -94,7 +94,9 @@ impl App {
 
                 list_entries.insert(0, Row::new(["Path", "Size"]));
 
-                let table = Table::new(list_entries).block(block);
+                let table = Table::new(list_entries)
+                    .style(Style::default().bg(Color::Black))
+                    .block(block);
 
                 frame.render_widget(table, chunks[0]);
             }
