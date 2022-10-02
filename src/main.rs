@@ -7,10 +7,18 @@ mod app;
 #[clap(name = "Dir Kill", version, author, about)]
 struct DirKillArgs {}
 
+fn pre_exit() -> anyhow::Result<()> {
+    use crossterm::{execute, terminal::LeaveAlternateScreen};
+    use std::io;
+
+    disable_raw_mode()?;
+    execute!(io::stdout(), LeaveAlternateScreen)?;
+
+    Ok(())
+}
+
 fn main() -> anyhow::Result<()> {
-    std::panic::set_hook(Box::new(|_| {
-        disable_raw_mode().unwrap();
-    }));
+    std::panic::set_hook(Box::new(|_| pre_exit().unwrap()));
 
     let args = DirKillArgs::parse();
 
@@ -20,7 +28,7 @@ fn main() -> anyhow::Result<()> {
 
     app.run()?;
 
-    disable_raw_mode()?;
+    pre_exit()?;
 
     Ok(())
 }
