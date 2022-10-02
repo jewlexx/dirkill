@@ -1,5 +1,5 @@
 use clap::Parser;
-use crossterm::terminal::{disable_raw_mode, enable_raw_mode};
+use crossterm::terminal::disable_raw_mode;
 
 mod app;
 
@@ -25,8 +25,6 @@ fn main() -> anyhow::Result<()> {
     let mut app = app::App::new();
 
     app.run()?;
-
-    pre_exit()?;
 
     Ok(())
 }

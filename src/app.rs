@@ -1,9 +1,9 @@
-use std::{error::Error, io, path::PathBuf, time::Duration};
+use std::{io, path::PathBuf, time::Duration};
 
 use crossterm::{
     event::{self, DisableMouseCapture, EnableMouseCapture, Event, KeyCode},
     execute,
-    terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
+    terminal::{enable_raw_mode, EnterAlternateScreen},
 };
 use tui::{
     backend::{Backend, CrosstermBackend},
@@ -50,7 +50,7 @@ impl App {
             if event::poll(Duration::from_millis(16))? {
                 if let Event::Key(key) = event::read()? {
                     match key.code {
-                        KeyCode::Char('q') => return Ok(()),
+                        KeyCode::Char('q') => break,
                         KeyCode::Down => self.next(),
                         KeyCode::Up => self.previous(),
                         _ => {}
@@ -58,6 +58,10 @@ impl App {
                 }
             }
         }
+
+        crate::pre_exit()?;
+
+        Ok(())
     }
 
     fn ui<B: Backend>(&mut self, frame: &mut Frame<B>) {
