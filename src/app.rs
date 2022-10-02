@@ -69,17 +69,9 @@ impl App {
         Ok(())
     }
 
-    pub fn get_files(&self) -> Option<Vec<DirEntry>> {
-        FILES.lock().clone()
-    }
-
-    pub fn set_files(&mut self, files: Vec<DirEntry>) {
-        *FILES.lock() = Some(files);
-    }
-
     fn ui<B: Backend>(&mut self, frame: &mut Frame<B>) {
         match FILES.lock().as_ref() {
-            Some(ref files) => {
+            Some(files) => {
                 println!("Is Some");
             }
             None => {
