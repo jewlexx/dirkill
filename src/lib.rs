@@ -1,4 +1,4 @@
-use std::ops::Range;
+use std::{ops::Range, path::Path};
 
 use args::DirKillArgs;
 use num_traits::Num;
@@ -62,4 +62,13 @@ impl<T: IntWrapType<T>> IntWrap<T> {
     }
 }
 
-pub fn get_files(args: DirKillArgs) {}
+pub fn get_files(args: &DirKillArgs, search_dir: impl AsRef<Path>) -> Vec<walkdir::DirEntry> {
+    let search_dir = search_dir.as_ref();
+    let target_dir = &args.target;
+
+    walkdir::WalkDir::new(search_dir)
+        .into_iter()
+        .filter_map(|entry| entry.ok())
+        .filter(|entry| entry.path().ends_with(target_dir))
+        .collect()
+}

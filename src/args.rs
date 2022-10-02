@@ -1,3 +1,5 @@
+use std::ffi::OsString;
+
 use clap::Parser;
 
 #[derive(Debug, Parser)]
@@ -9,5 +11,8 @@ pub struct DirKillArgs {
         default_value = "node_modules",
         help = "The directory to remove"
     )]
-    target: String,
+    pub target: OsString,
+
+    #[clap(short, long, default_value = ".", help = "The directory to search")]
+    pub dir: OsString,
 }

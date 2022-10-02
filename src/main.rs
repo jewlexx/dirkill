@@ -20,6 +20,8 @@ fn main() -> anyhow::Result<()> {
 
     let args = DirKillArgs::parse();
 
+    let qualified_dir = dunce::canonicalize(args.dir)?;
+
     let mut app = App::new();
 
     app.run()?;
