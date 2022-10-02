@@ -24,8 +24,6 @@ fn main() -> anyhow::Result<()> {
 
     let mut app = app::App::new();
 
-    enable_raw_mode()?;
-
     app.run()?;
 
     pre_exit()?;

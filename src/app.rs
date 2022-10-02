@@ -39,6 +39,7 @@ impl App {
     }
 
     pub fn run(&mut self) -> anyhow::Result<()> {
+        enable_raw_mode()?;
         execute!(io::stdout(), EnterAlternateScreen)?;
 
         let mut terminal = Terminal::new(CrosstermBackend::new(io::stdout()))?;
