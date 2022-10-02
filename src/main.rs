@@ -8,8 +8,6 @@ use crossterm::terminal::disable_raw_mode;
 
 mod app;
 
-static APP: Mutex<App> = Mutex::new(App::new());
-
 #[derive(Debug, Parser)]
 #[clap(name = "Dir Kill", version, author, about)]
 struct DirKillArgs {}
@@ -29,21 +27,9 @@ fn main() -> anyhow::Result<()> {
 
     let args = DirKillArgs::parse();
 
-    let ui_thread = thread::spawn(|| {
-        APP.lock().run()?;
+    let mut app = App::new();
 
-        anyhow::Ok(())
-    });
-
-    thread::spawn(|| {
-        let app = APP.lock();
-
-        println!("Able to lock app");
-    })
-    .join()
-    .unwrap();
-
-    ui_thread.join().unwrap()?;
+    app.run()?;
 
     Ok(())
 }
