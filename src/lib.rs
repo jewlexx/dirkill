@@ -16,16 +16,11 @@ pub trait IntWrapType<T: std::cmp::PartialOrd<T>>:
 
 impl<T: std::cmp::PartialOrd> IntWrapType<T> for usize where usize: std::cmp::PartialOrd<T> {}
 
+#[derive(Default)]
 pub struct IntWrap<T: IntWrapType<T>>(T, Range<T>);
 
-impl Default for IntWrap<usize> {
-    fn default() -> Self {
-        Self(0, 0..100)
-    }
-}
-
 impl<T: IntWrapType<T>> IntWrap<T> {
-    pub fn new(value: T, range: Range<T>) -> Self {
+    pub const fn new(value: T, range: Range<T>) -> Self {
         Self(value, range)
     }
 

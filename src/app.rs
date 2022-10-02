@@ -14,7 +14,6 @@ use tui::{
     Frame, Terminal,
 };
 
-#[derive(Default)]
 pub struct App {
     files: Option<Vec<PathBuf>>,
     index: usize,
@@ -22,8 +21,12 @@ pub struct App {
 }
 
 impl App {
-    pub fn new() -> Self {
-        Self::default()
+    pub const fn new() -> Self {
+        Self {
+            files: None,
+            index: 0,
+            loader_percent: dirlib::IntWrap::new(0, 0..100),
+        }
     }
 
     pub fn next(&mut self) {
