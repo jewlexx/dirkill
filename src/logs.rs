@@ -28,6 +28,8 @@ impl TracingWriter {
 
 impl Write for TracingWriter {
     fn write(&mut self, buf: &[u8]) -> std::io::Result<usize> {
+        let ascii_chars: Vec<&u8> = buf.iter().filter(|c| c.is_ascii()).collect();
+
         self.file.write(buf)
     }
 
