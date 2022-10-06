@@ -82,9 +82,8 @@ impl App {
 
     fn ui<B: Backend>(&mut self, frame: &mut Frame<B>) {
         let chunks = Layout::default()
-            .direction(Direction::Vertical)
+            .constraints([Constraint::Percentage(100)].as_ref())
             .margin(5)
-            .constraints([Constraint::Min(0)].as_ref())
             .split(frame.size());
 
         if *LOADING.lock() {
@@ -118,7 +117,12 @@ impl App {
                 .style(Style::default().bg(Color::Black))
                 .header(Row::new(["Path", "Size"]))
                 .block(block)
-                .highlight_symbol(">>");
+                .highlight_symbol(">>")
+                .widths(&[
+                    Constraint::Percentage(50),
+                    Constraint::Length(30),
+                    Constraint::Min(10),
+                ]);
 
             frame.render_widget(table, chunks[0]);
         }
