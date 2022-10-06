@@ -91,6 +91,27 @@ impl App {
         Ok(())
     }
 
+    fn delete_entry(&mut self, index: usize) {
+        let mut entries = ENTRIES.lock();
+        let entry = entries.get_mut(index).cloned().unwrap();
+
+        entries.get_mut(index).unwrap().deleting = Some(false);
+
+        std::thread::spawn(move || {
+            let p = entry.entry.path();
+            let mut entries = ENTRIES.lock();
+
+            match std::fs::remove_dir_all(p) {
+                Ok(_) => {
+                    entries.get_mut(index).unwrap().deleting = Some(true);
+                }
+                Err(_) => {
+                    entries.get_mut(index).unwrap().deleting = None;
+                }
+            };
+        });
+    }
+
     fn ui<B: Backend>(&mut self, frame: &mut Frame<B>) {
         let chunks = Layout::default()
             .constraints([Constraint::Percentage(100)].as_ref())
