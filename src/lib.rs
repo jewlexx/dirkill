@@ -104,7 +104,7 @@ pub fn get_files(
     args: &DirKillArgs,
     search_dir: impl AsRef<Path> + core::fmt::Debug,
     files: &'static Mutex<Vec<DirEntry>>,
-) -> Vec<DirEntry> {
+) {
     let search_dir = search_dir.as_ref();
     let target_dir = &args.target;
 
@@ -123,6 +123,4 @@ pub fn get_files(
         .collect();
 
     entries.sort_by(|a, b| a.size.cmp(&b.size));
-
-    entries
 }
