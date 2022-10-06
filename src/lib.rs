@@ -117,10 +117,16 @@ pub fn get_files(
     debug!("Getting files");
 
     loop {
-        if let Some(entry) = iter.next() {
-            let entry: DirEntry = entry.into();
-        } else {
-            break;
+        match iter.next() {
+            Some(Ok(entry)) => {
+                let entry: DirEntry = entry.into();
+                let path = entry.entry.path();
+                if path.ends_with("target") {
+                    debug!("Found file/dir {}", path.display());
+                }
+            }
+            None => break,
+            _ => break,
         }
     }
 
