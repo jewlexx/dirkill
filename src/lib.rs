@@ -36,9 +36,14 @@ struct TracingWriter {
 
 impl TracingWriter {
     pub fn new(file_path: impl AsRef<Path>) -> Self {
-        Self {
-            file_path: file_path.as_ref().to_owned(),
-        }
+        let mut path = file_path.as_ref().to_owned();
+        let file_name = chrono::Local::now()
+            .format("dir-kill.%Y-%m-%d_%H-%M-%S.log")
+            .to_string();
+
+        path.push(file_name);
+
+        Self { file_path: path }
     }
 }
 
@@ -48,6 +53,14 @@ impl MakeWriter<'_> for TracingWriter {
     fn make_writer(&self) -> Self::Writer {
         std::io::stdout()
     }
+}
+
+fn get_log_path() -> anyhow::Result<PathBuf> {
+    let mut path = dirs::home_dir().ok_or(anyhow::anyhow!("Could not get home directory"))?;
+    path.push(".dir-kill");
+    path.push("dir-kill.log");
+
+    Ok(path)
 }
 
 pub fn init_tracing() {
