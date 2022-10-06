@@ -1,5 +1,6 @@
 use std::{
     fs::File,
+    io::Write,
     ops::Range,
     path::{Path, PathBuf},
 };
@@ -7,7 +8,7 @@ use std::{
 use args::DirKillArgs;
 use num_traits::Num;
 use tracing::Level;
-use tracing_subscriber::fmt::format::FmtSpan;
+use tracing_subscriber::fmt::{format::FmtSpan, MakeWriter};
 
 use crate::app::ENTRIES;
 
@@ -44,9 +45,29 @@ impl TracingWriter {
 
         path.push(file_name);
 
-        let file = File::create(file_name)?;
+        let file = File::create(path)?;
 
         Ok(Self { file })
+    }
+}
+
+impl Write for TracingWriter {
+    fn write(&mut self, buf: &[u8]) -> std::io::Result<usize> {
+        self.file.write(buf)
+    }
+
+    fn flush(&mut self) -> std::io::Result<()> {
+        self.file.flush()
+    }
+}
+
+struct TracingWriterWrapper;
+
+impl MakeWriter<'_> for TracingWriterWrapper {
+    type Writer = TracingWriter;
+
+    fn make_writer(&self) -> Self::Writer {
+        TracingWriter::new(get_log_path()).unwrap()
     }
 }
 
@@ -72,7 +93,7 @@ pub fn init_tracing() -> anyhow::Result<()> {
             .with_span_events(FmtSpan::NEW | FmtSpan::CLOSE | FmtSpan::ENTER | FmtSpan::EXIT)
             .with_thread_names(true)
             .with_max_level(Level::DEBUG)
-            .with_writer(TracingWriter::new(get_log_path())?)
+            .with_writer(TracingWriterWrapper)
             .init();
     }
 
