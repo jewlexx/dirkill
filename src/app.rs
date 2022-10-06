@@ -43,14 +43,14 @@ impl App {
     }
 
     pub fn next(&mut self) {
-        self.index = (self.index + 1) % FILES.lock().as_ref().map(|x| x.len()).unwrap_or_default();
+        self.index = (self.index + 1) % ENTRIES.lock().len();
     }
 
     pub fn previous(&mut self) {
         if self.index > 0 {
             self.index -= 1;
         } else {
-            self.index = FILES.lock().as_ref().map(|x| x.len()).unwrap_or_default();
+            self.index = ENTRIES.lock().len();
         }
     }
 
