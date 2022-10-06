@@ -118,7 +118,9 @@ pub fn get_files(
 
     loop {
         if let Some(entry) = iter.next() {
-            let entry: DirEntry = entry.into();
+            if let Ok(entry) = entry {
+                let entry: DirEntry = entry.into();
+            }
         } else {
             break;
         }
