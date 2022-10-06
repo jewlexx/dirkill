@@ -126,8 +126,8 @@ impl App {
                         .add_modifier(Modifier::BOLD),
                 )
                 .widths(&[
-                    Constraint::Percentage(50),
-                    Constraint::Length(30),
+                    Constraint::Percentage(100),
+                    Constraint::Length(100),
                     Constraint::Min(10),
                 ]);
 
