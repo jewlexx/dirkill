@@ -5,6 +5,7 @@ use std::{
 
 use strip_ansi_escapes::Writer;
 use tracing::Level;
+use tracing_appender::non_blocking::WorkerGuard;
 use tracing_subscriber::fmt::{format::FmtSpan, MakeWriter};
 
 struct TracingWriter {
@@ -50,9 +51,9 @@ fn get_log_path() -> PathBuf {
     }
 }
 
-pub fn init_tracing() -> anyhow::Result<()> {
+pub fn init_tracing() -> anyhow::Result<Option<WorkerGuard>> {
     if cfg!(debug_assertions) {
-        let (non_blocking, _guard) =
+        let (non_blocking, guard) =
             tracing_appender::non_blocking(TracingWriter::new(get_log_path())?.make_writer());
 
         tracing_subscriber::fmt()
@@ -61,7 +62,9 @@ pub fn init_tracing() -> anyhow::Result<()> {
             .with_max_level(Level::DEBUG)
             .with_writer(non_blocking)
             .init();
-    }
 
-    Ok(())
+        Ok(Some(guard))
+    } else {
+        Ok(None)
+    }
 }
