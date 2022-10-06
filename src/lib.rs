@@ -129,6 +129,7 @@ pub fn get_files(
 
                 if is_target && entry.entry.file_type().is_dir() {
                     debug!("Found dir {}", path.display());
+                    files.lock().push(entry);
                 }
             }
             None => break,
