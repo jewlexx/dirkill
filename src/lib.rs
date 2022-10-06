@@ -55,12 +55,14 @@ impl MakeWriter<'_> for TracingWriter {
     }
 }
 
-fn get_log_path() -> anyhow::Result<PathBuf> {
-    let mut path = dirs::home_dir().ok_or(anyhow::anyhow!("Could not get home directory"))?;
-    path.push(".dir-kill");
-    path.push("dir-kill.log");
-
-    Ok(path)
+fn get_log_path() -> PathBuf {
+    cfg_if::cfg_if! {
+        if #[cfg(debug_assertions)] {
+            std::env::current_dir().unwrap()
+        } else {
+            std::env::temp_dir()
+        }
+    }
 }
 
 pub fn init_tracing() {
