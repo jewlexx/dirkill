@@ -1,17 +1,16 @@
-use std::{io, path::PathBuf, time::Duration};
+use std::{io, time::Duration};
 
 use crossterm::{
-    event::{self, DisableMouseCapture, EnableMouseCapture, Event, KeyCode},
+    event::{self, Event, KeyCode},
     execute,
     terminal::{enable_raw_mode, EnterAlternateScreen},
 };
 use parking_lot::Mutex;
 use tui::{
     backend::{Backend, CrosstermBackend},
-    layout::{Constraint, Direction, Layout},
+    layout::{Constraint, Layout},
     style::{Color, Modifier, Style},
-    text::{Span, Spans, Text},
-    widgets::{Block, Borders, Gauge, List, ListItem, Paragraph, Row, Table, TableState, Tabs},
+    widgets::{Block, Borders, Paragraph, Row, Table, TableState},
     Frame, Terminal,
 };
 
