@@ -127,8 +127,8 @@ pub fn get_files(
                     .map(|c| c.as_os_str() == "target")
                     .unwrap_or(false);
 
-                if is_target {
-                    debug!("Found file/dir {}", path.display());
+                if is_target && entry.entry.file_type().is_dir() {
+                    debug!("Found dir {}", path.display());
                 }
             }
             None => break,
