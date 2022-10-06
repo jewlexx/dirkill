@@ -110,9 +110,8 @@ impl App {
                 .map(|dir| {
                     debug!("Showing entry in tui: {}", dir.entry.path().display());
                     Row::new([
-                        // dir.entry.path().display().to_string(),
-                        // bytesize::ByteSize(dir.size).to_string(),
-                        "yo", "yay",
+                        dir.entry.path().display().to_string(),
+                        bytesize::ByteSize(dir.size).to_string(),
                     ])
                 })
                 .collect::<Vec<_>>();
