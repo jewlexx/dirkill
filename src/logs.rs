@@ -52,11 +52,14 @@ fn get_log_path() -> PathBuf {
 
 pub fn init_tracing() -> anyhow::Result<()> {
     if cfg!(debug_assertions) {
+        let (non_blocking, _guard) =
+            tracing_appender::non_blocking(TracingWriter::new(get_log_path())?.make_writer());
+
         tracing_subscriber::fmt()
             .with_span_events(FmtSpan::NEW | FmtSpan::CLOSE | FmtSpan::ENTER | FmtSpan::EXIT)
             .with_thread_names(true)
             .with_max_level(Level::DEBUG)
-            .with_writer(TracingWriter::new(get_log_path())?)
+            .with_writer(non_blocking)
             .init();
     }
 
