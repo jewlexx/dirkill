@@ -25,8 +25,11 @@ pub trait IntWrapType<T: std::cmp::PartialOrd<T>>:
 impl<T: std::cmp::PartialOrd> IntWrapType<T> for usize where usize: std::cmp::PartialOrd<T> {}
 
 pub fn init_tracing() {
+    let (writer, _guard) = tracing_appender::non_blocking(std::io::stdout());
+
     tracing_subscriber::fmt()
         .with_span_events(FmtSpan::NEW | FmtSpan::CLOSE | FmtSpan::ENTER | FmtSpan::EXIT)
+        .with_writer(writer)
         .with_thread_names(true)
         .init();
 }
