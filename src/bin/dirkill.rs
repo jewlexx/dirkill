@@ -8,7 +8,9 @@ extern crate tracing;
 
 fn main() -> anyhow::Result<()> {
     let guard = dirlib::logs::init_tracing()?;
-    std::panic::set_hook(Box::new(|_| dirlib::app::pre_exit().unwrap()));
+    std::panic::set_hook(Box::new(|_| {
+        dirlib::app::pre_exit().unwrap();
+    }));
 
     info!("Starting dirkill");
 
@@ -25,6 +27,8 @@ fn main() -> anyhow::Result<()> {
     // .unwrap();
 
     app.run()?;
+
+    drop(guard);
 
     Ok(())
 }
