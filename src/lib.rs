@@ -58,7 +58,13 @@ impl MakeWriter<'_> for TracingWriter {
 fn get_log_path() -> PathBuf {
     cfg_if::cfg_if! {
         if #[cfg(debug_assertions)] {
-            std::env::current_dir().unwrap().join("logs")
+            let base_path = std::env::current_dir().unwrap().join("logs");
+
+            if !base_path.exists() {
+                std::fs::create_dir(&base_path).unwrap();
+            }
+
+            base_path
         } else {
             std::env::temp_dir()
         }
