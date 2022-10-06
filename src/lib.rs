@@ -110,11 +110,19 @@ pub fn get_files(
 
     debug!("Searching for files in {:?}", search_dir);
 
-    let iter = walkdir::WalkDir::new(search_dir)
+    let mut iter = walkdir::WalkDir::new(search_dir)
         .follow_links(false)
         .into_iter();
 
     debug!("Getting files");
+
+    loop {
+        if let Some(entry) = iter.next() {
+            let entry: DirEntry = entry.into();
+        } else {
+            break;
+        }
+    }
 
     let mut entries: Vec<DirEntry> = iter
         .filter_map(|entry| entry.ok())
