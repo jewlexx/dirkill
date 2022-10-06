@@ -25,10 +25,12 @@ pub trait IntWrapType<T: std::cmp::PartialOrd<T>>:
 impl<T: std::cmp::PartialOrd> IntWrapType<T> for usize where usize: std::cmp::PartialOrd<T> {}
 
 pub fn init_tracing() {
-    tracing_subscriber::fmt()
-        .with_span_events(FmtSpan::NEW | FmtSpan::CLOSE | FmtSpan::ENTER | FmtSpan::EXIT)
-        .with_thread_names(true)
-        .init();
+    if cfg!(debug_assertions) {
+        tracing_subscriber::fmt()
+            .with_span_events(FmtSpan::NEW | FmtSpan::CLOSE | FmtSpan::ENTER | FmtSpan::EXIT)
+            .with_thread_names(true)
+            .init();
+    }
 }
 
 #[derive(Default)]
@@ -101,6 +103,8 @@ pub fn get_files(args: &DirKillArgs, search_dir: impl AsRef<Path>) -> Vec<DirEnt
     let iter = walkdir::WalkDir::new(search_dir)
         .follow_links(false)
         .into_iter();
+
+    debug!("Getting files");
 
     let mut entries: Vec<DirEntry> = iter
         .filter_map(|entry| entry.ok())
