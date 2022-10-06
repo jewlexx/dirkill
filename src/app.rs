@@ -87,40 +87,38 @@ impl App {
             .constraints([Constraint::Min(0)].as_ref())
             .split(frame.size());
 
-        match FILES.lock().as_ref() {
-            Some(files_ref) => {
-                let block = Block::default()
-                    .title("Discovered Paths")
-                    .borders(Borders::ALL);
+        if *LOADING.lock() {
+            let mut text = "Loading Directory".to_owned();
 
-                let mut list_entries = files_ref
-                    .iter()
-                    .map(|dir| {
-                        Row::new([
-                            dir.entry.path().to_string_lossy().to_string(),
-                            bytesize::ByteSize(dir.size).to_string(),
-                        ])
-                    })
-                    .collect::<Vec<_>>();
+            let dots = ".".repeat(*self.loader_percent.bump() / 10);
+            text.push_str(&dots);
 
-                list_entries.insert(0, Row::new(["Path", "Size"]));
+            let gauge = Paragraph::new(text);
 
-                let table = Table::new(list_entries)
-                    .style(Style::default().bg(Color::Black))
-                    .block(block);
+            frame.render_widget(gauge, chunks[0]);
+        } else {
+            let block = Block::default()
+                .title("Discovered Paths")
+                .borders(Borders::ALL);
 
-                frame.render_widget(table, chunks[0]);
-            }
-            None => {
-                let mut text = "Loading Directory".to_owned();
+            let mut list_entries = ENTRIES
+                .lock()
+                .iter()
+                .map(|dir| {
+                    Row::new([
+                        dir.entry.path().to_string_lossy().to_string(),
+                        bytesize::ByteSize(dir.size).to_string(),
+                    ])
+                })
+                .collect::<Vec<_>>();
 
-                let dots = ".".repeat(*self.loader_percent.bump() / 10);
-                text.push_str(&dots);
+            list_entries.insert(0, Row::new(["Path", "Size"]));
 
-                let gauge = Paragraph::new(text);
+            let table = Table::new(list_entries)
+                .style(Style::default().bg(Color::Black))
+                .block(block);
 
-                frame.render_widget(gauge, chunks[0]);
-            }
-        };
+            frame.render_widget(table, chunks[0]);
+        }
     }
 }

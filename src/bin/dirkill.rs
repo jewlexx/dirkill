@@ -2,7 +2,7 @@ use std::thread;
 
 use clap::Parser;
 use dirlib::{
-    app::{App, FILES},
+    app::{App, ENTRIES},
     args::DirKillArgs,
     DirEntry,
 };
