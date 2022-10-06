@@ -96,17 +96,22 @@ impl From<walkdir::DirEntry> for DirEntry {
     }
 }
 
-pub fn get_files(args: &DirKillArgs, search_dir: impl AsRef<Path>) -> Vec<DirEntry> {
+#[tracing::instrument]
+pub fn get_files(
+    args: &DirKillArgs,
+    search_dir: impl AsRef<Path> + core::fmt::Debug,
+) -> Vec<DirEntry> {
     let search_dir = search_dir.as_ref();
     let target_dir = &args.target;
 
-    let iter = walkdir::WalkDir::new(search_dir)
-        .follow_links(false)
-        .into_iter();
+    debug!("Searching for files in {:?}", search_dir);
+
+    let iter = walkdir::WalkDir::new(search_dir).follow_links(false);
 
     debug!("Getting files");
 
     let mut entries: Vec<DirEntry> = iter
+        .into_iter()
         .filter_map(|entry| entry.ok())
         .map(|entry| -> DirEntry { entry.into() })
         .filter(|entry| entry.entry.path().ends_with(target_dir))
