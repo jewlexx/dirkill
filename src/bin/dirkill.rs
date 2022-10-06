@@ -6,8 +6,14 @@ use dirlib::{
     args::DirKillArgs,
 };
 
+#[macro_use]
+extern crate tracing;
+
 fn main() -> anyhow::Result<()> {
+    dirlib::init_tracing();
     std::panic::set_hook(Box::new(|_| dirlib::app::pre_exit().unwrap()));
+
+    info!("Starting dirkill");
 
     let args = DirKillArgs::parse();
 

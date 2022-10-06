@@ -2,9 +2,13 @@ use std::{ops::Range, path::Path};
 
 use args::DirKillArgs;
 use num_traits::Num;
+use tracing_subscriber::fmt::format::FmtSpan;
 
 pub mod app;
 pub mod args;
+
+#[macro_use]
+extern crate tracing;
 
 pub trait IntWrapType<T: std::cmp::PartialOrd<T>>:
     Num
@@ -19,6 +23,14 @@ pub trait IntWrapType<T: std::cmp::PartialOrd<T>>:
 }
 
 impl<T: std::cmp::PartialOrd> IntWrapType<T> for usize where usize: std::cmp::PartialOrd<T> {}
+
+pub fn init_tracing() {
+    tracing_subscriber::fmt()
+        .pretty()
+        .with_span_events(FmtSpan::NEW | FmtSpan::CLOSE | FmtSpan::ENTER | FmtSpan::EXIT)
+        .with_thread_names(true)
+        .init();
+}
 
 #[derive(Default)]
 pub struct IntWrap<T: IntWrapType<T>>(T, Range<T>);
