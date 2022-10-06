@@ -46,6 +46,13 @@ fn get_log_path() -> PathBuf {
 
     if !base_path.exists() {
         std::fs::create_dir(&base_path).unwrap();
+    } else {
+        let read = std::fs::read_dir(&base_path).unwrap();
+
+        if read.count() > 10 {
+            std::fs::remove_dir(&base_path).unwrap();
+            std::fs::create_dir(&base_path).unwrap();
+        }
     }
 
     base_path
