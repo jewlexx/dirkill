@@ -101,7 +101,7 @@ impl App {
                 .title("Discovered Paths")
                 .borders(Borders::ALL);
 
-            let mut list_entries = ENTRIES
+            let list_entries = ENTRIES
                 .lock()
                 .iter()
                 .map(|dir| {
