@@ -1,4 +1,4 @@
-use std::{fs::File, ops::Range, path::Path};
+use std::{ops::Range, path::Path};
 
 use args::DirKillArgs;
 use num_traits::Num;
@@ -103,7 +103,7 @@ impl From<walkdir::DirEntry> for DirEntry {
 pub fn get_files(
     args: &DirKillArgs,
     search_dir: impl AsRef<Path> + core::fmt::Debug,
-    files: Mutex<Vec<DirEntry>>,
+    files: &'static Mutex<Vec<DirEntry>>,
 ) -> Vec<DirEntry> {
     let search_dir = search_dir.as_ref();
     let target_dir = &args.target;
