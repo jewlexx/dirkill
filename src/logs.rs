@@ -28,9 +28,9 @@ impl TracingWriter {
 
 impl Write for TracingWriter {
     fn write(&mut self, buf: &[u8]) -> std::io::Result<usize> {
-        let ascii_chars: Vec<u8> = buf.iter().filter(|c| c.is_ascii()).cloned().collect();
+        let s = strip_ansi_escapes::strip(buf).unwrap();
 
-        self.file.write(&ascii_chars)
+        self.file.write(&s)
     }
 
     fn flush(&mut self) -> std::io::Result<()> {
