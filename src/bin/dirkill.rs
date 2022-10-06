@@ -8,8 +8,6 @@ use dirlib::{
 };
 use parking_lot::Mutex;
 
-static ENTRIES: Mutex<Vec<DirEntry>> = Mutex::new(Vec::new());
-
 #[macro_use]
 extern crate tracing;
 

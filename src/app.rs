@@ -26,7 +26,8 @@ pub fn pre_exit() -> anyhow::Result<()> {
     Ok(())
 }
 
-pub static FILES: Mutex<Option<Vec<DirEntry>>> = Mutex::new(None);
+pub static ENTRIES: Mutex<Vec<DirEntry>> = Mutex::new(Vec::new());
+pub static LOADING: Mutex<bool> = Mutex::new(false);
 
 pub struct App {
     index: usize,
