@@ -120,6 +120,11 @@ impl App {
                 .style(Style::default().bg(Color::Black))
                 .header(Row::new(["Path", "Size"]))
                 .block(block)
+                .highlight_style(
+                    Style::default()
+                        .bg(Color::LightYellow)
+                        .add_modifier(Modifier::BOLD),
+                )
                 .highlight_symbol(">>")
                 .widths(&[
                     Constraint::Percentage(50),
