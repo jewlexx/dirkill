@@ -113,11 +113,11 @@ impl App {
                 })
                 .collect::<Vec<_>>();
 
-            list_entries.insert(0, Row::new(["Path", "Size"]));
-
             let table = Table::new(list_entries)
                 .style(Style::default().bg(Color::Black))
-                .block(block);
+                .header(Row::new(["Path", "Size"]))
+                .block(block)
+                .highlight_symbol(">>");
 
             frame.render_widget(table, chunks[0]);
         }
