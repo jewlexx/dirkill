@@ -2,12 +2,12 @@ use std::{ops::Range, path::Path};
 
 use args::DirKillArgs;
 use num_traits::Num;
-use parking_lot::Mutex;
-use tracing::Level;
-use tracing_subscriber::fmt::format::FmtSpan;
+
+use crate::app::ENTRIES;
 
 pub mod app;
 pub mod args;
+pub mod logs;
 
 #[macro_use]
 extern crate tracing;
@@ -25,16 +25,6 @@ pub trait IntWrapType<T: std::cmp::PartialOrd<T>>:
 }
 
 impl<T: std::cmp::PartialOrd> IntWrapType<T> for usize where usize: std::cmp::PartialOrd<T> {}
-
-pub fn init_tracing() {
-    if cfg!(debug_assertions) {
-        tracing_subscriber::fmt()
-            .with_span_events(FmtSpan::NEW | FmtSpan::CLOSE | FmtSpan::ENTER | FmtSpan::EXIT)
-            .with_thread_names(true)
-            .with_max_level(Level::DEBUG)
-            .init();
-    }
-}
 
 #[derive(Default)]
 pub struct IntWrap<T: IntWrapType<T>>(T, Range<T>);
@@ -100,11 +90,7 @@ impl From<walkdir::DirEntry> for DirEntry {
 }
 
 #[tracing::instrument]
-pub fn get_files(
-    args: &DirKillArgs,
-    search_dir: impl AsRef<Path> + core::fmt::Debug,
-    files: &'static Mutex<Vec<DirEntry>>,
-) {
+pub fn get_files(args: &DirKillArgs, search_dir: impl AsRef<Path> + core::fmt::Debug) {
     let search_dir = search_dir.as_ref();
     let target_dir = &args.target;
 
@@ -117,20 +103,25 @@ pub fn get_files(
     debug!("Getting files");
 
     loop {
-        if let Some(entry) = iter.next() {
-            if let Ok(entry) = entry {
+        match iter.next() {
+            Some(Ok(entry)) => {
                 let entry: DirEntry = entry.into();
+                let path = entry.entry.path();
+                let is_target = path
+                    .components()
+                    .last()
+                    .map(|c| c.as_os_str() == target_dir)
+                    .unwrap_or(false);
+
+                if is_target && entry.entry.file_type().is_dir() {
+                    debug!("Found dir {}", path.display());
+                    ENTRIES.lock().push(entry);
+                }
             }
-        } else {
-            break;
+            None => break,
+            _ => {}
         }
     }
 
-    let mut entries: Vec<DirEntry> = iter
-        .filter_map(|entry| entry.ok())
-        .map(|entry| -> DirEntry { entry.into() })
-        .filter(|entry| entry.entry.path().ends_with(target_dir))
-        .collect();
-
-    entries.sort_by(|a, b| a.size.cmp(&b.size));
+    *crate::app::LOADING.lock() = false;
 }

@@ -1,18 +1,13 @@
 use std::thread;
 
 use clap::Parser;
-use dirlib::{
-    app::{App, ENTRIES},
-    args::DirKillArgs,
-    DirEntry,
-};
-use parking_lot::Mutex;
+use dirlib::{app::App, args::DirKillArgs};
 
 #[macro_use]
 extern crate tracing;
 
 fn main() -> anyhow::Result<()> {
-    dirlib::init_tracing();
+    dirlib::logs::init_tracing()?;
     std::panic::set_hook(Box::new(|_| dirlib::app::pre_exit().unwrap()));
 
     info!("Starting dirkill");
@@ -24,8 +19,10 @@ fn main() -> anyhow::Result<()> {
     let mut app = App::new();
 
     thread::spawn(move || {
-        dirlib::get_files(&args, qualified_dir, &ENTRIES);
+        dirlib::get_files(&args, qualified_dir);
     });
+    // .join()
+    // .unwrap();
 
     app.run()?;
 
