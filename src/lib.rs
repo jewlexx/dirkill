@@ -71,7 +71,7 @@ pub fn init_tracing() {
             .with_span_events(FmtSpan::NEW | FmtSpan::CLOSE | FmtSpan::ENTER | FmtSpan::EXIT)
             .with_thread_names(true)
             .with_max_level(Level::DEBUG)
-            .with_writer(TracingWriter {})
+            .with_writer(TracingWriter::new(get_log_path()))
             .init();
     }
 }
