@@ -126,7 +126,7 @@ impl App {
                     Constraint::Min(10),
                 ]);
 
-            frame.render_widget(table, chunks[0]);
+            frame.render_stateful_widget(table, chunks[0], &mut self.state);
         }
     }
 }
