@@ -45,7 +45,14 @@ impl App {
     }
 
     pub fn next(&mut self) {
-        self.index = (self.index + 1) % ENTRIES.lock().len();
+        let entries_len = ENTRIES.lock().len();
+
+        if self.index >= entries_len {
+            self.index = 0;
+        } else {
+            self.index = (self.index + 1) % entries_len;
+        }
+
         self.state.select(Some(self.index));
     }
 
