@@ -109,9 +109,9 @@ pub fn get_files(args: &DirKillArgs, search_dir: impl AsRef<Path> + core::fmt::D
                 let path = entry.entry.path();
                 let is_target = path
                     .components()
-                    .last()
-                    .map(|c| c.as_os_str() == target_dir)
-                    .unwrap_or(false);
+                    .filter(|c| c.as_os_str() == target_dir)
+                    .count()
+                    == 1;
 
                 if is_target && entry.entry.file_type().is_dir() {
                     debug!("Found dir {}", path.display());
