@@ -118,54 +118,45 @@ impl App {
             .margin(5)
             .split(frame.size());
 
-        if *LOADING.lock() {
-            let mut text = "Loading Directory".to_owned();
+        let loading = *LOADING.lock();
 
-            let dots = ".".repeat(*self.loader_percent.bump() / 10);
-            text.push_str(&dots);
+        let block_title = if loading { "Loading..." } else { "Paths" };
 
-            let gauge = Paragraph::new(text);
+        let block = Block::default().title(block_title).borders(Borders::ALL);
 
-            frame.render_widget(gauge, chunks[0]);
-        } else {
-            let block = Block::default()
-                .title("Discovered Paths")
-                .borders(Borders::ALL);
+        let list_entries = ENTRIES
+            .lock()
+            .iter()
+            .map(|dir| {
+                debug!("Showing entry in tui: {}", dir.entry.path().display());
+                let mut size = bytesize::ByteSize(dir.size).to_string();
 
-            let list_entries = ENTRIES
-                .lock()
-                .iter()
-                .map(|dir| {
-                    debug!("Showing entry in tui: {}", dir.entry.path().display());
-                    let mut size = bytesize::ByteSize(dir.size).to_string();
+                match dir.deleting {
+                    Some(true) => size = "[DELETED]".to_owned(),
+                    Some(false) => size.push_str(" [DELETING]"),
+                    None => {}
+                }
 
-                    match dir.deleting {
-                        Some(true) => size = "[DELETED]".to_owned(),
-                        Some(false) => size.push_str(" [DELETING]"),
-                        None => {}
-                    }
+                Row::new([dir.entry.path().display().to_string(), size])
+            })
+            .collect::<Vec<_>>();
 
-                    Row::new([dir.entry.path().display().to_string(), size])
-                })
-                .collect::<Vec<_>>();
+        let table = Table::new(list_entries)
+            .style(Style::default().bg(Color::Black))
+            .header(Row::new(["Path", "Size"]))
+            .block(block)
+            .highlight_style(
+                Style::default()
+                    .bg(Color::Yellow)
+                    .add_modifier(Modifier::BOLD),
+            )
+            .widths(&[
+                Constraint::Percentage(50),
+                Constraint::Length(30),
+                Constraint::Min(10),
+            ]);
 
-            let table = Table::new(list_entries)
-                .style(Style::default().bg(Color::Black))
-                .header(Row::new(["Path", "Size"]))
-                .block(block)
-                .highlight_style(
-                    Style::default()
-                        .bg(Color::Yellow)
-                        .add_modifier(Modifier::BOLD),
-                )
-                .widths(&[
-                    Constraint::Percentage(50),
-                    Constraint::Length(30),
-                    Constraint::Min(10),
-                ]);
-
-            frame.render_stateful_widget(table, chunks[0], &mut self.state);
-        }
+        frame.render_stateful_widget(table, chunks[0], &mut self.state);
     }
 }
 
