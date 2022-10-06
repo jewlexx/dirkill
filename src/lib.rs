@@ -48,10 +48,10 @@ impl TracingWriter {
 }
 
 impl MakeWriter<'_> for TracingWriter {
-    type Writer = std::io::Stdout;
+    type Writer = std::fs::File;
 
     fn make_writer(&self) -> Self::Writer {
-        std::io::stdout()
+        std::fs::File::create(&self.file_path).unwrap()
     }
 }
 
