@@ -87,9 +87,11 @@ pub fn get_files(args: &DirKillArgs, search_dir: impl AsRef<Path>) -> Vec<DirEnt
     let search_dir = search_dir.as_ref();
     let target_dir = &args.target;
 
-    let mut entries: Vec<DirEntry> = walkdir::WalkDir::new(search_dir)
+    let iter = walkdir::WalkDir::new(search_dir)
         .follow_links(false)
-        .into_iter()
+        .into_iter();
+
+    let mut entries: Vec<DirEntry> = iter
         .filter_map(|entry| entry.ok())
         .map(|entry| -> DirEntry { entry.into() })
         .filter(|entry| entry.entry.path().ends_with(target_dir))
