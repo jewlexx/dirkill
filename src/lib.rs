@@ -58,7 +58,7 @@ impl MakeWriter<'_> for TracingWriter {
 fn get_log_path() -> PathBuf {
     cfg_if::cfg_if! {
         if #[cfg(debug_assertions)] {
-            std::env::current_dir().unwrap()
+            std::env::current_dir().unwrap().join("logs")
         } else {
             std::env::temp_dir()
         }
