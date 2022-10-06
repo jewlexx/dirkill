@@ -2,7 +2,7 @@
 
 Stupidly fast directory deletion.
 
-## TODO:
+## TODO
 
 - [ ] Add tests
 - [] Add warnings for dotfiles
