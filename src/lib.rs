@@ -26,7 +26,6 @@ impl<T: std::cmp::PartialOrd> IntWrapType<T> for usize where usize: std::cmp::Pa
 
 pub fn init_tracing() {
     tracing_subscriber::fmt()
-        .pretty()
         .with_span_events(FmtSpan::NEW | FmtSpan::CLOSE | FmtSpan::ENTER | FmtSpan::EXIT)
         .with_thread_names(true)
         .init();

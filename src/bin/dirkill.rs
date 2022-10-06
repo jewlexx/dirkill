@@ -15,6 +15,8 @@ fn main() -> anyhow::Result<()> {
 
     info!("Starting dirkill");
 
+    return Ok(());
+
     let args = DirKillArgs::parse();
 
     let qualified_dir = dunce::canonicalize(&args.dir)?;
