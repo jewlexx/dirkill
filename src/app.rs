@@ -80,6 +80,7 @@ impl App {
                         KeyCode::Char('q') => break,
                         KeyCode::Down => self.next(),
                         KeyCode::Up => self.previous(),
+                        KeyCode::Enter => self.delete_entry(self.index),
                         _ => {}
                     }
                 }
