@@ -116,10 +116,15 @@ impl App {
                 .iter()
                 .map(|dir| {
                     debug!("Showing entry in tui: {}", dir.entry.path().display());
-                    Row::new([
-                        dir.entry.path().display().to_string(),
-                        bytesize::ByteSize(dir.size).to_string(),
-                    ])
+                    let mut size = bytesize::ByteSize(dir.size).to_string();
+
+                    match dir.deleting {
+                        Some(true) => size = "[DELETED]".to_owned(),
+                        Some(false) => size.push_str(" [DELETING]"),
+                        None => {}
+                    }
+
+                    Row::new([dir.entry.path().display().to_string(), size])
                 })
                 .collect::<Vec<_>>();
 
