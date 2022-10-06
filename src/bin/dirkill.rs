@@ -4,9 +4,7 @@ use clap::Parser;
 use dirlib::{
     app::{App, ENTRIES},
     args::DirKillArgs,
-    DirEntry,
 };
-use parking_lot::Mutex;
 
 #[macro_use]
 extern crate tracing;
@@ -26,6 +24,8 @@ fn main() -> anyhow::Result<()> {
     thread::spawn(move || {
         dirlib::get_files(&args, qualified_dir, &ENTRIES);
     });
+    // .join()
+    // .unwrap();
 
     app.run()?;
 

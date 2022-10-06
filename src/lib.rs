@@ -121,7 +121,13 @@ pub fn get_files(
             Some(Ok(entry)) => {
                 let entry: DirEntry = entry.into();
                 let path = entry.entry.path();
-                if path.ends_with("target") {
+                let is_target = path
+                    .components()
+                    .last()
+                    .map(|c| c.as_os_str() == "target")
+                    .unwrap_or(false);
+
+                if is_target {
                     debug!("Found file/dir {}", path.display());
                 }
             }
