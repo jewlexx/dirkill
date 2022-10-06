@@ -1,14 +1,14 @@
 use std::{
     fs::File,
-    io::Write,
     path::{Path, PathBuf},
 };
 
+use strip_ansi_escapes::Writer;
 use tracing::Level;
 use tracing_subscriber::fmt::{format::FmtSpan, MakeWriter};
 
 struct TracingWriter {
-    file: File,
+    file_path: PathBuf,
 }
 
 impl TracingWriter {
@@ -20,31 +20,17 @@ impl TracingWriter {
 
         path.push(file_name);
 
-        let file = File::create(path)?;
-
-        Ok(Self { file })
+        Ok(Self { file_path: path })
     }
 }
 
-impl Write for TracingWriter {
-    fn write(&mut self, buf: &[u8]) -> std::io::Result<usize> {
-        let s = strip_ansi_escapes::strip(buf).unwrap();
-
-        self.file.write(&s)
-    }
-
-    fn flush(&mut self) -> std::io::Result<()> {
-        self.file.flush()
-    }
-}
-
-struct TracingWriterWrapper;
-
-impl MakeWriter<'_> for TracingWriterWrapper {
-    type Writer = TracingWriter;
+impl MakeWriter<'_> for TracingWriter {
+    type Writer = Writer<File>;
 
     fn make_writer(&self) -> Self::Writer {
-        TracingWriter::new(get_log_path()).unwrap()
+        let file = File::create(&self.file_path).unwrap();
+
+        Writer::new(file)
     }
 }
 
@@ -70,7 +56,7 @@ pub fn init_tracing() -> anyhow::Result<()> {
             .with_span_events(FmtSpan::NEW | FmtSpan::CLOSE | FmtSpan::ENTER | FmtSpan::EXIT)
             .with_thread_names(true)
             .with_max_level(Level::DEBUG)
-            .with_writer(TracingWriterWrapper)
+            .with_writer(TracingWriter::new(get_log_path())?)
             .init();
     }
 
