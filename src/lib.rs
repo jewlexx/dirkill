@@ -1,10 +1,12 @@
-use std::{ops::Range, path::Path};
+use std::{
+    ops::Range,
+    path::{Path, PathBuf},
+};
 
 use args::DirKillArgs;
 use num_traits::Num;
-use parking_lot::Mutex;
 use tracing::Level;
-use tracing_subscriber::fmt::format::FmtSpan;
+use tracing_subscriber::fmt::{format::FmtSpan, MakeWriter};
 
 use crate::app::ENTRIES;
 
@@ -28,12 +30,33 @@ pub trait IntWrapType<T: std::cmp::PartialOrd<T>>:
 
 impl<T: std::cmp::PartialOrd> IntWrapType<T> for usize where usize: std::cmp::PartialOrd<T> {}
 
+struct TracingWriter {
+    file_path: PathBuf,
+}
+
+impl TracingWriter {
+    pub fn new(file_path: impl AsRef<Path>) -> Self {
+        Self {
+            file_path: file_path.as_ref().to_owned(),
+        }
+    }
+}
+
+impl MakeWriter<'_> for TracingWriter {
+    type Writer = std::io::Stdout;
+
+    fn make_writer(&self) -> Self::Writer {
+        std::io::stdout()
+    }
+}
+
 pub fn init_tracing() {
     if cfg!(debug_assertions) {
         tracing_subscriber::fmt()
             .with_span_events(FmtSpan::NEW | FmtSpan::CLOSE | FmtSpan::ENTER | FmtSpan::EXIT)
             .with_thread_names(true)
             .with_max_level(Level::DEBUG)
+            .with_writer(TracingWriter {})
             .init();
     }
 }
