@@ -50,7 +50,7 @@ fn get_log_path() -> PathBuf {
         let read = std::fs::read_dir(&base_path).unwrap();
 
         if read.count() > 10 {
-            std::fs::remove_dir(&base_path).unwrap();
+            std::fs::remove_dir_all(&base_path).unwrap();
             std::fs::create_dir(&base_path).unwrap();
         }
     }
