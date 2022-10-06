@@ -125,7 +125,6 @@ impl App {
                         .bg(Color::Yellow)
                         .add_modifier(Modifier::BOLD),
                 )
-                .highlight_symbol(">>")
                 .widths(&[
                     Constraint::Percentage(50),
                     Constraint::Length(30),
