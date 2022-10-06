@@ -6,6 +6,8 @@ use parking_lot::Mutex;
 use tracing::Level;
 use tracing_subscriber::fmt::format::FmtSpan;
 
+use crate::app::ENTRIES;
+
 pub mod app;
 pub mod args;
 
@@ -100,11 +102,7 @@ impl From<walkdir::DirEntry> for DirEntry {
 }
 
 #[tracing::instrument]
-pub fn get_files(
-    args: &DirKillArgs,
-    search_dir: impl AsRef<Path> + core::fmt::Debug,
-    files: &'static Mutex<Vec<DirEntry>>,
-) {
+pub fn get_files(args: &DirKillArgs, search_dir: impl AsRef<Path> + core::fmt::Debug) {
     let search_dir = search_dir.as_ref();
     let target_dir = &args.target;
 
@@ -124,12 +122,12 @@ pub fn get_files(
                 let is_target = path
                     .components()
                     .last()
-                    .map(|c| c.as_os_str() == "target")
+                    .map(|c| c.as_os_str() == target_dir)
                     .unwrap_or(false);
 
                 if is_target && entry.entry.file_type().is_dir() {
                     debug!("Found dir {}", path.display());
-                    files.lock().push(entry);
+                    ENTRIES.lock().push(entry);
                 }
             }
             None => break,
@@ -137,11 +135,5 @@ pub fn get_files(
         }
     }
 
-    let mut entries: Vec<DirEntry> = iter
-        .filter_map(|entry| entry.ok())
-        .map(|entry| -> DirEntry { entry.into() })
-        .filter(|entry| entry.entry.path().ends_with(target_dir))
-        .collect();
-
-    entries.sort_by(|a, b| a.size.cmp(&b.size));
+    *crate::app::LOADING.lock() = false;
 }

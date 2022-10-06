@@ -1,10 +1,7 @@
 use std::thread;
 
 use clap::Parser;
-use dirlib::{
-    app::{App, ENTRIES},
-    args::DirKillArgs,
-};
+use dirlib::{app::App, args::DirKillArgs};
 
 #[macro_use]
 extern crate tracing;
@@ -22,7 +19,7 @@ fn main() -> anyhow::Result<()> {
     let mut app = App::new();
 
     thread::spawn(move || {
-        dirlib::get_files(&args, qualified_dir, &ENTRIES);
+        dirlib::get_files(&args, qualified_dir);
     });
     // .join()
     // .unwrap();
