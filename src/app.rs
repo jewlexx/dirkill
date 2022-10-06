@@ -122,7 +122,7 @@ impl App {
                 .block(block)
                 .highlight_style(
                     Style::default()
-                        .bg(Color::LightYellow)
+                        .bg(Color::Yellow)
                         .add_modifier(Modifier::BOLD),
                 )
                 .highlight_symbol(">>")
