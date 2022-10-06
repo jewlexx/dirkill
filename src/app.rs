@@ -5,7 +5,6 @@ use crossterm::{
     execute,
     terminal::{enable_raw_mode, EnterAlternateScreen},
 };
-use dirlib::DirEntry;
 use parking_lot::Mutex;
 use tui::{
     backend::{Backend, CrosstermBackend},
@@ -16,18 +15,29 @@ use tui::{
     Frame, Terminal,
 };
 
+use crate::DirEntry;
+
+pub fn pre_exit() -> anyhow::Result<()> {
+    use crossterm::terminal::{disable_raw_mode, LeaveAlternateScreen};
+
+    disable_raw_mode()?;
+    execute!(io::stdout(), LeaveAlternateScreen)?;
+
+    Ok(())
+}
+
 pub static FILES: Mutex<Option<Vec<DirEntry>>> = Mutex::new(None);
 
 pub struct App {
     index: usize,
-    loader_percent: dirlib::IntWrap<usize>,
+    loader_percent: crate::IntWrap<usize>,
 }
 
 impl App {
     pub const fn new() -> Self {
         Self {
             index: 0,
-            loader_percent: dirlib::IntWrap::new(0, 0..40),
+            loader_percent: crate::IntWrap::new(0, 0..40),
         }
     }
 
@@ -64,7 +74,7 @@ impl App {
             }
         }
 
-        crate::pre_exit()?;
+        pre_exit()?;
 
         Ok(())
     }

@@ -3,6 +3,7 @@ use std::{ops::Range, path::Path};
 use args::DirKillArgs;
 use num_traits::Num;
 
+pub mod app;
 pub mod args;
 
 pub trait IntWrapType<T: std::cmp::PartialOrd<T>>:

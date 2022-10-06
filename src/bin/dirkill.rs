@@ -1,24 +1,13 @@
 use std::thread;
 
-use app::{App, FILES};
 use clap::Parser;
-use crossterm::terminal::disable_raw_mode;
-use dirlib::args::DirKillArgs;
-
-mod app;
-
-fn pre_exit() -> anyhow::Result<()> {
-    use crossterm::{execute, terminal::LeaveAlternateScreen};
-    use std::io;
-
-    disable_raw_mode()?;
-    execute!(io::stdout(), LeaveAlternateScreen)?;
-
-    Ok(())
-}
+use dirlib::{
+    app::{App, FILES},
+    args::DirKillArgs,
+};
 
 fn main() -> anyhow::Result<()> {
-    std::panic::set_hook(Box::new(|_| pre_exit().unwrap()));
+    std::panic::set_hook(Box::new(|_| dirlib::app::pre_exit().unwrap()));
 
     let args = DirKillArgs::parse();
 
