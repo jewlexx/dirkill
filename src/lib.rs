@@ -1,4 +1,5 @@
 use std::{
+    fs::File,
     ops::Range,
     path::{Path, PathBuf},
 };
@@ -6,7 +7,7 @@ use std::{
 use args::DirKillArgs;
 use num_traits::Num;
 use tracing::Level;
-use tracing_subscriber::fmt::{format::FmtSpan, MakeWriter};
+use tracing_subscriber::fmt::format::FmtSpan;
 
 use crate::app::ENTRIES;
 
@@ -31,11 +32,11 @@ pub trait IntWrapType<T: std::cmp::PartialOrd<T>>:
 impl<T: std::cmp::PartialOrd> IntWrapType<T> for usize where usize: std::cmp::PartialOrd<T> {}
 
 struct TracingWriter {
-    file_path: PathBuf,
+    file: File,
 }
 
 impl TracingWriter {
-    pub fn new(file_path: impl AsRef<Path>) -> Self {
+    pub fn new(file_path: impl AsRef<Path>) -> std::io::Result<Self> {
         let mut path = file_path.as_ref().to_owned();
         let file_name = chrono::Local::now()
             .format("dir-kill.%Y-%m-%d_%H-%M-%S.log")
@@ -43,15 +44,9 @@ impl TracingWriter {
 
         path.push(file_name);
 
-        Self { file_path: path }
-    }
-}
+        let file = File::create(file_name)?;
 
-impl MakeWriter<'_> for TracingWriter {
-    type Writer = std::fs::File;
-
-    fn make_writer(&self) -> Self::Writer {
-        std::fs::File::create(&self.file_path).unwrap()
+        Ok(Self { file })
     }
 }
 
@@ -71,15 +66,17 @@ fn get_log_path() -> PathBuf {
     }
 }
 
-pub fn init_tracing() {
+pub fn init_tracing() -> anyhow::Result<()> {
     if cfg!(debug_assertions) {
         tracing_subscriber::fmt()
             .with_span_events(FmtSpan::NEW | FmtSpan::CLOSE | FmtSpan::ENTER | FmtSpan::EXIT)
             .with_thread_names(true)
             .with_max_level(Level::DEBUG)
-            .with_writer(TracingWriter::new(get_log_path()))
+            .with_writer(TracingWriter::new(get_log_path())?)
             .init();
     }
+
+    Ok(())
 }
 
 #[derive(Default)]

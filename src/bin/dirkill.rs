@@ -7,7 +7,7 @@ use dirlib::{app::App, args::DirKillArgs};
 extern crate tracing;
 
 fn main() -> anyhow::Result<()> {
-    dirlib::init_tracing();
+    dirlib::init_tracing()?;
     std::panic::set_hook(Box::new(|_| dirlib::app::pre_exit().unwrap()));
 
     info!("Starting dirkill");
