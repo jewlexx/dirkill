@@ -10,7 +10,7 @@ use tui::{
     backend::{Backend, CrosstermBackend},
     layout::{Constraint, Layout},
     style::{Color, Modifier, Style},
-    widgets::{Block, Borders, Paragraph, Row, Table, TableState},
+    widgets::{Block, Borders, Row, Table, TableState},
     Frame, Terminal,
 };
 
@@ -30,7 +30,6 @@ pub static LOADING: Mutex<bool> = Mutex::new(true);
 
 pub struct App {
     index: usize,
-    loader_percent: crate::IntWrap<usize>,
     state: TableState,
 }
 
@@ -38,7 +37,6 @@ impl App {
     pub fn new() -> Self {
         Self {
             index: 0,
-            loader_percent: crate::IntWrap::new(0, 0..40),
             state: TableState::default(),
         }
     }
@@ -120,7 +118,11 @@ impl App {
 
         let loading = *LOADING.lock();
 
-        let block_title = if loading { "Loading..." } else { "Paths" };
+        let block_title = if loading {
+            "Loading..."
+        } else {
+            "Found all paths"
+        };
 
         let block = Block::default().title(block_title).borders(Borders::ALL);
 
