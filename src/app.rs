@@ -46,6 +46,7 @@ impl App {
 
     pub fn next(&mut self) {
         self.index = (self.index + 1) % ENTRIES.lock().len();
+        self.state.select(Some(self.index));
     }
 
     pub fn previous(&mut self) {
@@ -54,6 +55,7 @@ impl App {
         } else {
             self.index = ENTRIES.lock().len();
         }
+        self.state.select(Some(self.index));
     }
 
     pub fn run(&mut self) -> anyhow::Result<()> {
