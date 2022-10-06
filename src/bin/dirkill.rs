@@ -25,8 +25,6 @@ fn main() -> anyhow::Result<()> {
 
     thread::spawn(move || {
         dirlib::get_files(&args, qualified_dir, &ENTRIES);
-        // println!("{:?}", files);
-        *FILES.lock() = Some(files);
     });
 
     app.run()?;
