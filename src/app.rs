@@ -11,7 +11,7 @@ use tui::{
     layout::{Constraint, Direction, Layout},
     style::{Color, Modifier, Style},
     text::{Span, Spans, Text},
-    widgets::{Block, Borders, Gauge, List, ListItem, Paragraph, Row, Table, Tabs},
+    widgets::{Block, Borders, Gauge, List, ListItem, Paragraph, Row, Table, TableState, Tabs},
     Frame, Terminal,
 };
 
@@ -32,13 +32,15 @@ pub static LOADING: Mutex<bool> = Mutex::new(false);
 pub struct App {
     index: usize,
     loader_percent: crate::IntWrap<usize>,
+    state: TableState,
 }
 
 impl App {
-    pub const fn new() -> Self {
+    pub fn new() -> Self {
         Self {
             index: 0,
             loader_percent: crate::IntWrap::new(0, 0..40),
+            state: TableState::default(),
         }
     }
 
@@ -126,5 +128,11 @@ impl App {
 
             frame.render_widget(table, chunks[0]);
         }
+    }
+}
+
+impl Default for App {
+    fn default() -> Self {
+        Self::new()
     }
 }
