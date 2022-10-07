@@ -10,6 +10,7 @@ use tui::{
     backend::{Backend, CrosstermBackend},
     layout::{Alignment, Constraint, Layout},
     style::{Color, Modifier, Style},
+    text::Span,
     widgets::{Block, Row, Table, TableState},
     Frame, Terminal,
 };
@@ -164,7 +165,12 @@ impl App {
 
         let block = Block::default()
             .title_alignment(Alignment::Center)
-            .title("Files");
+            .title(Span::styled(
+                "Controls: <Left/Right> - Sort, <Up/Down> - Navigate, <Enter> - Delete, <q> - Quit",
+                Style::default()
+                    .fg(Color::White)
+                    .add_modifier(Modifier::BOLD),
+            ));
 
         let mut list_entries = ENTRIES
             .lock()
