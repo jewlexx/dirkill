@@ -200,7 +200,12 @@ impl App {
                             if *LOADING.lock() { " [LOADING]" } else { "" }
                         )
                     },
-                    "Size".to_owned(),
+                    if self.sorting == Sorting::Size {
+                        "> Size"
+                    } else {
+                        "Size"
+                    }
+                    .to_owned(),
                 ])
                 .style(Style::default().add_modifier(Modifier::BOLD)),
             )
