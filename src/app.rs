@@ -167,6 +167,17 @@ impl App {
             .margin(5)
             .split(frame.size());
 
+        let title = Span::styled(
+            "DirKill by Juliette Cordor",
+            Style::default()
+                .fg(Color::White)
+                .add_modifier(Modifier::ITALIC),
+        );
+
+        let title = Paragraph::new(title).alignment(Alignment::Center);
+
+        frame.render_widget(title, chunks[0]);
+
         let s = Span::styled(
             "Controls: <Left/Right> - Sort, <Up/Down> - Navigate, <Enter> - Delete, <q> - Quit",
             Style::default()
@@ -175,6 +186,8 @@ impl App {
         );
 
         let controls = Paragraph::new(s).alignment(Alignment::Center);
+
+        frame.render_widget(controls, chunks[1]);
 
         let block = Block::default();
 
@@ -253,7 +266,6 @@ impl App {
                 Constraint::Min(10),
             ]);
 
-        frame.render_widget(controls, chunks[0]);
-        frame.render_stateful_widget(table, chunks[1], &mut self.state);
+        frame.render_stateful_widget(table, chunks[2], &mut self.state);
     }
 }
