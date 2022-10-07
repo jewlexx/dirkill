@@ -23,7 +23,7 @@ fn get_log_path() -> PathBuf {
 }
 
 pub fn init_tracing() -> anyhow::Result<Option<WorkerGuard>> {
-    #[cfg(not(release))]
+    #[cfg(not(profile = "release"))]
     {
         let mut path = get_log_path();
         let file_name = chrono::Local::now()
@@ -46,6 +46,6 @@ pub fn init_tracing() -> anyhow::Result<Option<WorkerGuard>> {
         Ok(Some(guard))
     }
 
-    #[cfg(release)]
+    #[cfg(profile = "release")]
     Ok(None)
 }
