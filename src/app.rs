@@ -176,9 +176,13 @@ impl App {
 
         let me = Span::styled("Juliette Cordor", Style::default().fg(Color::LightGreen));
 
+        let love = Span::styled("♥", Style::default().fg(Color::Red));
+
         let title = Paragraph::new(Spans::from(vec![
             title,
-            Span::from(" was made with 💗 by "),
+            Span::from(" was made with "),
+            love,
+            Span::from(" by "),
             me,
         ]))
         .alignment(Alignment::Center);
