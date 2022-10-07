@@ -7,4 +7,4 @@ Stupidly fast directory deletion.
 - [] Add tests
 - [] Add warnings for dotfiles
 - [] Add warnings for symlinks
-- [] Add sorting
+- [x] Add sorting
