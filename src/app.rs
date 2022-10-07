@@ -10,8 +10,8 @@ use tui::{
     backend::{Backend, CrosstermBackend},
     layout::{Alignment, Constraint, Layout},
     style::{Color, Modifier, Style},
-    text::Span,
-    widgets::{Block, Row, Table, TableState},
+    text::{Span, Text},
+    widgets::{Block, Paragraph, Row, Table, TableState},
     Frame, Terminal,
 };
 
@@ -159,18 +159,20 @@ impl App {
 
     fn ui<B: Backend>(&mut self, frame: &mut Frame<B>) {
         let chunks = Layout::default()
-            .constraints([Constraint::Percentage(100)].as_ref())
+            .constraints([Constraint::Percentage(10), Constraint::Percentage(90)])
             .margin(5)
             .split(frame.size());
 
-        let block = Block::default()
-            .title_alignment(Alignment::Center)
-            .title(Span::styled(
-                "Controls: <Left/Right> - Sort, <Up/Down> - Navigate, <Enter> - Delete, <q> - Quit",
-                Style::default()
-                    .fg(Color::White)
-                    .add_modifier(Modifier::BOLD),
-            ));
+        let s = Span::styled(
+            "Controls: <Left/Right> - Sort, <Up/Down> - Navigate, <Enter> - Delete, <q> - Quit",
+            Style::default()
+                .fg(Color::White)
+                .add_modifier(Modifier::BOLD),
+        );
+
+        let controls = Paragraph::new(s);
+
+        let block = Block::default();
 
         let mut list_entries = ENTRIES
             .lock()
@@ -247,6 +249,7 @@ impl App {
                 Constraint::Min(10),
             ]);
 
-        frame.render_stateful_widget(table, chunks[0], &mut self.state);
+        frame.render_widget(controls, chunks[0]);
+        frame.render_stateful_widget(table, chunks[1], &mut self.state);
     }
 }
