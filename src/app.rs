@@ -30,11 +30,11 @@ pub static LOADING: Mutex<bool> = Mutex::new(true);
 
 #[derive(Default)]
 pub enum Sorting {
-    Name,
-    Size,
-
     #[default]
-    None,
+    None = 0,
+
+    Name = 1,
+    Size = 2,
 }
 
 pub struct App {
