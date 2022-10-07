@@ -179,7 +179,8 @@ impl App {
 
         list_entries.sort_by(|old, entry| match self.sorting {
             Sorting::Name => old.0.cmp(&entry.0),
-            Sorting::Size => old.1 .0.cmp(&entry.1 .0),
+            // For some reason size sorting is inverted so we have to invert it back :)
+            Sorting::Size => entry.1 .0.cmp(&old.1 .0),
             Sorting::None => std::cmp::Ordering::Equal,
         });
 
