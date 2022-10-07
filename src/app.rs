@@ -10,7 +10,7 @@ use tui::{
     backend::{Backend, CrosstermBackend},
     layout::{Alignment, Constraint, Layout},
     style::{Color, Modifier, Style},
-    text::Span,
+    text::{Span, Spans},
     widgets::{Block, Paragraph, Row, Table, TableState},
     Frame, Terminal,
 };
@@ -168,13 +168,20 @@ impl App {
             .split(frame.size());
 
         let title = Span::styled(
-            "DirKill by Juliette Cordor",
+            "DirKill",
             Style::default()
-                .fg(Color::White)
+                .fg(self.highlight_color)
                 .add_modifier(Modifier::ITALIC),
         );
 
-        let title = Paragraph::new(title).alignment(Alignment::Center);
+        let me = Span::styled("Juliette Cordor", Style::default().fg(Color::LightGreen));
+
+        let title = Paragraph::new(Spans::from(vec![
+            title,
+            Span::from(" was made with 💗 by "),
+            me,
+        ]))
+        .alignment(Alignment::Center);
 
         frame.render_widget(title, chunks[0]);
 
