@@ -8,7 +8,7 @@ use crossterm::{
 use parking_lot::Mutex;
 use tui::{
     backend::{Backend, CrosstermBackend},
-    layout::{Constraint, Layout},
+    layout::{Alignment, Constraint, Layout},
     style::{Color, Modifier, Style},
     widgets::{Block, Row, Table, TableState},
     Frame, Terminal,
@@ -162,7 +162,9 @@ impl App {
             .margin(5)
             .split(frame.size());
 
-        let block = Block::default();
+        let block = Block::default()
+            .title_alignment(Alignment::Center)
+            .title("Files");
 
         let mut list_entries = ENTRIES
             .lock()
