@@ -63,7 +63,13 @@ pub fn parse_hex(raw_hex: impl AsRef<str>) -> Result<Color, ColorError> {
 
     validate_hex_len(hex_value_len)?;
 
-    let hex_usize = usize::from_str_radix(hex_value, 16)?;
+    let hex_valid = if hex_value_len == 3 {
+        hex_3_to_6(hex_value)
+    } else {
+        hex_value.to_string()
+    };
+
+    let hex_usize = usize::from_str_radix(&hex_valid, 16)?;
 
     let r = (hex_usize >> 16) as u8;
     let g = ((hex_usize >> 8) & 0x00FF) as u8;
