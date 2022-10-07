@@ -169,27 +169,35 @@ impl App {
             .iter()
             .map(|dir| {
                 debug!("Showing entry in tui: {}", dir.entry.path().display());
-                let mut size = bytesize::ByteSize(dir.size).to_string();
 
-                match dir.deleting {
-                    Some(true) => size = "[DELETED]".to_owned(),
-                    Some(false) => size.push_str(" [DELETING]"),
-                    None => {}
-                }
-
-                (dir.entry.path().display().to_string(), size)
+                (
+                    dir.entry.path().display().to_string(),
+                    (dir.size, dir.deleting),
+                )
             })
             .collect::<Vec<_>>();
 
         list_entries.sort_by(|old, entry| match self.sorting {
             Sorting::Name => old.0.cmp(&entry.0),
-            Sorting::Size => old.1.cmp(&entry.0),
+            Sorting::Size => old.1 .0.cmp(&entry.1 .0),
             Sorting::None => std::cmp::Ordering::Equal,
         });
 
         let list_rows = list_entries
             .iter()
-            .map(|entry| Row::new([entry.0.clone(), entry.1.clone()]))
+            .map(|entry| {
+                Row::new([entry.0.clone(), {
+                    let mut size = bytesize::ByteSize(entry.1 .0).to_string();
+
+                    match entry.1 .1 {
+                        Some(true) => size = "[DELETED]".to_owned(),
+                        Some(false) => size.push_str(" [DELETING]"),
+                        None => {}
+                    }
+
+                    size
+                }])
+            })
             .collect::<Vec<_>>();
 
         let table = Table::new(list_rows)
