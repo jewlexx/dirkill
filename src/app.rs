@@ -31,13 +31,15 @@ pub static LOADING: Mutex<bool> = Mutex::new(true);
 pub struct App {
     index: usize,
     state: TableState,
+    highlight_color: (u8, u8, u8),
 }
 
 impl App {
-    pub fn new() -> Self {
+    pub fn new(highlight_color: (u8, u8, u8)) -> Self {
         Self {
             index: 0,
             state: TableState::default(),
+            highlight_color,
         }
     }
 
@@ -164,6 +166,6 @@ impl App {
 
 impl Default for App {
     fn default() -> Self {
-        Self::new()
+        Self::new((255, 255, 255))
     }
 }

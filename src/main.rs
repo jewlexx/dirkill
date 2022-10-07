@@ -8,10 +8,11 @@ use clap::Parser;
 use app::App;
 use args::DirKillArgs;
 
-pub mod app;
-pub mod args;
-pub mod files;
-pub mod logs;
+mod app;
+mod args;
+mod color;
+mod files;
+mod logs;
 
 fn main() -> anyhow::Result<()> {
     let guard = logs::init_tracing()?;
@@ -25,7 +26,17 @@ fn main() -> anyhow::Result<()> {
 
     let qualified_dir = dunce::canonicalize(&args.dir)?;
 
-    let mut app = App::new();
+    let color = args.color.parse::<u32>()?;
+
+    let rgb = match colors_transform::Rgb::from_hex_str(&args.color) {
+        Ok(v) => v,
+        Err(_) => {
+            error!("Invalid color provided");
+            std::process::exit(1);
+        }
+    };
+
+    let mut app = App::new(rgb);
 
     thread::spawn(move || {
         files::get_files(&args, qualified_dir);
