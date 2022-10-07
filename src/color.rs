@@ -1,4 +1,4 @@
-use std::str::Chars;
+use std::{num::ParseIntError, str::Chars};
 
 use thiserror::Error as AsError;
 use tui::style::Color;
@@ -11,6 +11,8 @@ pub enum ColorError {
     IncludesAlpha,
     #[error("Hex value must be 3 or 6 characters")]
     InvalidHexLength,
+    #[error("Failed to parse hex value")]
+    ParseError(#[from] ParseIntError),
 }
 
 fn validate_chars(mut chars: Chars) -> Result<(), ColorError> {
@@ -46,10 +48,6 @@ fn hex_3_to_6(hex_trois: &str) -> String {
     hex
 }
 
-fn hex_char_to_digit(c: char) -> u8 {
-    c.to_digit(16).unwrap() as u8
-}
-
 pub fn parse_hex(raw_hex: impl AsRef<str>) -> Result<Color, ColorError> {
     let raw_hex = raw_hex.as_ref();
 
@@ -65,10 +63,14 @@ pub fn parse_hex(raw_hex: impl AsRef<str>) -> Result<Color, ColorError> {
 
     validate_hex_len(hex_value_len)?;
 
-    let hex_digits = hex_value.chars().map(hex_char_to_digit).collect::<Vec<_>>();
+    let hex_usize = usize::from_str_radix(hex_value, 16)?;
+
+    let r = (hex_usize >> 16) as u8;
+    let g = ((hex_usize >> 8) & 0x00FF) as u8;
+    let b = (hex_usize & 0x0000_00FF) as u8;
 
     // TMP
-    Ok(Color::Yellow)
+    Ok(Color::Rgb(r, g, b))
 }
 
 #[cfg(test)]
@@ -77,14 +79,6 @@ mod tests {
 
     #[test]
     fn test_parse_hex() {
-        assert_eq!(parse_hex("#fff"), Ok(Color::Yellow));
-    }
-
-    #[test]
-    fn test_hex_to_digit() {
-        let hex = 'f';
-        let digit = hex_char_to_digit(hex);
-
-        assert_eq!(digit, 15);
+        assert_eq!(parse_hex("#fff"), Ok(Color::Rgb(255, 255, 255)));
     }
 }
