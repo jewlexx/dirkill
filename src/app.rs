@@ -44,8 +44,8 @@ impl App {
     pub fn next(&mut self) {
         let entries_len = ENTRIES.lock().len();
 
-        if self.index < entries_len {
-            self.index = (self.index + 1) % entries_len;
+        if self.index < entries_len - 1 {
+            self.index += 1;
         } else {
             self.index = 0;
         }
@@ -54,11 +54,14 @@ impl App {
     }
 
     pub fn previous(&mut self) {
+        let entries_len = ENTRIES.lock().len();
+
         if self.index > 0 {
             self.index -= 1;
         } else {
-            self.index = ENTRIES.lock().len();
+            self.index = entries_len - 1;
         }
+
         self.state.select(Some(self.index));
     }
 
@@ -124,7 +127,7 @@ impl App {
             "Found all paths"
         };
 
-        let block = Block::default().title(block_title).borders(Borders::ALL);
+        let block = Block::default().title(block_title);
 
         let list_entries = ENTRIES
             .lock()
@@ -145,7 +148,7 @@ impl App {
 
         let table = Table::new(list_entries)
             .style(Style::default().bg(Color::Black))
-            .header(Row::new(["Path", "Size"]))
+            .header(Row::new(["Path", "Size"]).style(Style::default().add_modifier(Modifier::BOLD)))
             .block(block)
             .highlight_style(
                 Style::default()
