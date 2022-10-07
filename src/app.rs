@@ -28,13 +28,33 @@ pub fn pre_exit() -> anyhow::Result<()> {
 pub static ENTRIES: Mutex<Vec<DirEntry>> = Mutex::new(Vec::new());
 pub static LOADING: Mutex<bool> = Mutex::new(true);
 
-#[derive(Default)]
+#[derive(Default, Copy, Clone)]
 pub enum Sorting {
     #[default]
-    None = 0,
+    None,
 
-    Name = 1,
-    Size = 2,
+    Name,
+    Size,
+}
+
+impl From<usize> for Sorting {
+    fn from(value: usize) -> Self {
+        match value {
+            1 => Sorting::Name,
+            2 => Sorting::Size,
+            _ => Sorting::None,
+        }
+    }
+}
+
+impl From<Sorting> for usize {
+    fn from(value: Sorting) -> Self {
+        match value {
+            Sorting::Name => 1,
+            Sorting::Size => 2,
+            Sorting::None => 0,
+        }
+    }
 }
 
 pub struct App {
@@ -93,6 +113,16 @@ impl App {
                         KeyCode::Char('q') => break,
                         KeyCode::Down => self.next(),
                         KeyCode::Up => self.previous(),
+                        KeyCode::Right => {
+                            let old: usize = self.sorting.into();
+
+                            self.sorting = if old >= 2 { 0 } else { old + 1 }.into();
+                        }
+                        KeyCode::Left => {
+                            let old: usize = self.sorting.into();
+
+                            self.sorting = if old == 0 { 2 } else { old - 1 }.into();
+                        }
                         KeyCode::Enter => self.delete_entry(self.index),
                         _ => {}
                     }
