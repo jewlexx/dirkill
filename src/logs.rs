@@ -6,13 +6,7 @@ use tracing_appender::non_blocking::WorkerGuard;
 use tracing_subscriber::fmt::format::FmtSpan;
 
 fn get_log_path() -> PathBuf {
-    cfg_if::cfg_if! {
-        if #[cfg(debug_assertions)] {
-            let base_path = std::env::current_dir().unwrap().join("logs");
-        } else {
-            let base_path = std::env::temp_dir().join("dir-kill-logs");
-        }
-    }
+    let base_path = std::env::current_dir().unwrap().join("logs");
 
     if !base_path.exists() {
         std::fs::create_dir(&base_path).unwrap();
@@ -29,7 +23,7 @@ fn get_log_path() -> PathBuf {
 }
 
 pub fn init_tracing() -> anyhow::Result<Option<WorkerGuard>> {
-    #[cfg(debug_assertions)]
+    #[cfg(not(release))]
     {
         let mut path = get_log_path();
         let file_name = chrono::Local::now()
@@ -52,6 +46,6 @@ pub fn init_tracing() -> anyhow::Result<Option<WorkerGuard>> {
         Ok(Some(guard))
     }
 
-    #[cfg(not(debug_assertions))]
+    #[cfg(release)]
     Ok(None)
 }
