@@ -15,4 +15,12 @@ pub struct DirKillArgs {
 
     #[clap(short, long, default_value = ".", help = "The directory to search")]
     pub dir: OsString,
+
+    #[clap(
+        short,
+        long,
+        help = "The highlight color to use for the selected entry. Must be a hex value",
+        default_value = ""
+    )]
+    pub color: String,
 }
