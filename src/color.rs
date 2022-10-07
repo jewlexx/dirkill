@@ -86,5 +86,7 @@ mod tests {
     #[test]
     fn test_parse_hex() {
         assert_eq!(parse_hex("#fff"), Ok(Color::Rgb(255, 255, 255)));
+        assert_eq!(parse_hex("#000"), Ok(Color::Rgb(0, 0, 0)));
+        assert_eq!(parse_hex("#c19c00"), Ok(Color::Rgb(193, 156, 0)));
     }
 }
