@@ -159,7 +159,11 @@ impl App {
 
     fn ui<B: Backend>(&mut self, frame: &mut Frame<B>) {
         let chunks = Layout::default()
-            .constraints([Constraint::Percentage(10), Constraint::Percentage(90)])
+            .constraints([
+                Constraint::Percentage(5),
+                Constraint::Percentage(5),
+                Constraint::Percentage(90),
+            ])
             .margin(5)
             .split(frame.size());
 
