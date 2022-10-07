@@ -7,6 +7,7 @@ use clap::Parser;
 
 use app::App;
 use args::DirKillArgs;
+use tui::style::Color;
 
 mod app;
 mod args;
@@ -26,14 +27,10 @@ fn main() -> anyhow::Result<()> {
 
     let qualified_dir = dunce::canonicalize(&args.dir)?;
 
-    let color = args.color.parse::<u32>()?;
-
-    let rgb = match colors_transform::Rgb::from_hex_str(&args.color) {
-        Ok(v) => v,
-        Err(_) => {
-            error!("Invalid color provided");
-            std::process::exit(1);
-        }
+    let color = if let Some(ref hex) = args.color {
+        color::parse_hex(hex)?
+    } else {
+        Color::Yellow
     };
 
     let mut app = App::new((0, 0, 0));

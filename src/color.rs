@@ -65,6 +65,8 @@ pub fn parse_hex(raw_hex: impl AsRef<str>) -> Result<Color, ColorError> {
 
     validate_hex_len(hex_value_len)?;
 
+    let hex_digits = hex_value.chars().map(hex_char_to_digit).collect::<Vec<_>>();
+
     // TMP
     Ok(Color::Yellow)
 }

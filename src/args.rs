@@ -19,8 +19,7 @@ pub struct DirKillArgs {
     #[clap(
         short,
         long,
-        help = "The highlight color to use for the selected entry. Must be a hex value",
-        default_value = "#C19C00"
+        help = "The highlight color to use for the selected entry. Must be a hex value"
     )]
-    pub color: String,
+    pub color: Option<String>,
 }
