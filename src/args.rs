@@ -20,7 +20,7 @@ pub struct DirKillArgs {
         short,
         long,
         help = "The highlight color to use for the selected entry. Must be a hex value",
-        default_value = ""
+        default_value = "#C19C00"
     )]
     pub color: String,
 }
