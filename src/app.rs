@@ -10,7 +10,7 @@ use tui::{
     backend::{Backend, CrosstermBackend},
     layout::{Alignment, Constraint, Layout},
     style::{Color, Modifier, Style},
-    text::{Span, Text},
+    text::Span,
     widgets::{Block, Paragraph, Row, Table, TableState},
     Frame, Terminal,
 };
@@ -170,7 +170,7 @@ impl App {
                 .add_modifier(Modifier::BOLD),
         );
 
-        let controls = Paragraph::new(s);
+        let controls = Paragraph::new(s).alignment(Alignment::Center);
 
         let block = Block::default();
 
