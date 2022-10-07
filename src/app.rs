@@ -28,7 +28,7 @@ pub fn pre_exit() -> anyhow::Result<()> {
 pub static ENTRIES: Mutex<Vec<DirEntry>> = Mutex::new(Vec::new());
 pub static LOADING: Mutex<bool> = Mutex::new(true);
 
-#[derive(Default, Copy, Clone)]
+#[derive(Default, Copy, Clone, PartialEq, Eq)]
 pub enum Sorting {
     #[default]
     None,
@@ -186,8 +186,23 @@ impl App {
         let table = Table::new(list_entries)
             .style(Style::default().bg(Color::Black))
             .header(
-                Row::new([if loading { "Path [LOADING...]" } else { "Path" }, "Size"])
-                    .style(Style::default().add_modifier(Modifier::BOLD)),
+                Row::new([
+                    {
+                        let path_base = if self.sorting == Sorting::Name {
+                            "> Path"
+                        } else {
+                            "Path"
+                        };
+
+                        format!(
+                            "{}{}",
+                            path_base,
+                            if *LOADING.lock() { " [LOADING]" } else { "" }
+                        )
+                    },
+                    "Size".to_owned(),
+                ])
+                .style(Style::default().add_modifier(Modifier::BOLD)),
             )
             .block(block)
             .highlight_style(
