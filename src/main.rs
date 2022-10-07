@@ -33,7 +33,7 @@ fn main() -> anyhow::Result<()> {
         Color::Yellow
     };
 
-    let mut app = App::new((0, 0, 0));
+    let mut app = App::new(color);
 
     thread::spawn(move || {
         files::get_files(&args, qualified_dir);

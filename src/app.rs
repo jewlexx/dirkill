@@ -31,11 +31,11 @@ pub static LOADING: Mutex<bool> = Mutex::new(true);
 pub struct App {
     index: usize,
     state: TableState,
-    highlight_color: (u8, u8, u8),
+    highlight_color: Color,
 }
 
 impl App {
-    pub fn new(highlight_color: (u8, u8, u8)) -> Self {
+    pub fn new(highlight_color: Color) -> Self {
         Self {
             index: 0,
             state: TableState::default(),
@@ -151,7 +151,7 @@ impl App {
             .block(block)
             .highlight_style(
                 Style::default()
-                    .bg(Color::Yellow)
+                    .bg(self.highlight_color)
                     .add_modifier(Modifier::BOLD),
             )
             .widths(&[
@@ -161,11 +161,5 @@ impl App {
             ]);
 
         frame.render_stateful_widget(table, chunks[0], &mut self.state);
-    }
-}
-
-impl Default for App {
-    fn default() -> Self {
-        Self::new((255, 255, 255))
     }
 }
