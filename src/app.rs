@@ -28,10 +28,20 @@ pub fn pre_exit() -> anyhow::Result<()> {
 pub static ENTRIES: Mutex<Vec<DirEntry>> = Mutex::new(Vec::new());
 pub static LOADING: Mutex<bool> = Mutex::new(true);
 
+#[derive(Default)]
+pub enum Sorting {
+    Name,
+    Size,
+
+    #[default]
+    None,
+}
+
 pub struct App {
     index: usize,
     state: TableState,
     highlight_color: Color,
+    sorting: Sorting,
 }
 
 impl App {
@@ -40,6 +50,7 @@ impl App {
             index: 0,
             state: TableState::default(),
             highlight_color,
+            sorting: Sorting::default(),
         }
     }
 
