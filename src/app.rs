@@ -10,8 +10,7 @@ use tui::{
     backend::{Backend, CrosstermBackend},
     layout::{Constraint, Layout},
     style::{Color, Modifier, Style},
-    text,
-    widgets::{Block, Borders, Row, Table, TableState},
+    widgets::{Block, Row, Table, TableState},
     Frame, Terminal,
 };
 
