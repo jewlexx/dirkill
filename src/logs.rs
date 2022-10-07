@@ -1,39 +1,9 @@
-use std::{
-    fs::File,
-    path::{Path, PathBuf},
-};
+use std::{fs::File, path::PathBuf};
 
 use strip_ansi_escapes::Writer;
 use tracing::Level;
 use tracing_appender::non_blocking::WorkerGuard;
-use tracing_subscriber::fmt::{format::FmtSpan, MakeWriter};
-
-struct TracingWriter {
-    file_path: PathBuf,
-}
-
-impl TracingWriter {
-    pub fn new(file_path: impl AsRef<Path>) -> std::io::Result<Self> {
-        let mut path = file_path.as_ref().to_owned();
-        let file_name = chrono::Local::now()
-            .format("dir-kill.%Y-%m-%d_%H-%M-%S.log")
-            .to_string();
-
-        path.push(file_name);
-
-        Ok(Self { file_path: path })
-    }
-}
-
-impl MakeWriter<'_> for TracingWriter {
-    type Writer = Writer<File>;
-
-    fn make_writer(&self) -> Self::Writer {
-        let file = File::create(&self.file_path).unwrap();
-
-        Writer::new(file)
-    }
-}
+use tracing_subscriber::fmt::format::FmtSpan;
 
 fn get_log_path() -> PathBuf {
     cfg_if::cfg_if! {
@@ -59,9 +29,18 @@ fn get_log_path() -> PathBuf {
 }
 
 pub fn init_tracing() -> anyhow::Result<Option<WorkerGuard>> {
-    if cfg!(debug_assertions) {
-        let (non_blocking, guard) =
-            tracing_appender::non_blocking(TracingWriter::new(get_log_path())?.make_writer());
+    #[cfg(debug_assertions)]
+    {
+        let mut path = get_log_path();
+        let file_name = chrono::Local::now()
+            .format("dir-kill.%Y-%m-%d_%H-%M-%S.log")
+            .to_string();
+
+        path.push(file_name);
+
+        let file = File::create(path).unwrap();
+
+        let (non_blocking, guard) = tracing_appender::non_blocking(Writer::new(file));
 
         tracing_subscriber::fmt()
             .with_span_events(FmtSpan::NEW | FmtSpan::CLOSE | FmtSpan::ENTER | FmtSpan::EXIT)
@@ -71,7 +50,8 @@ pub fn init_tracing() -> anyhow::Result<Option<WorkerGuard>> {
             .init();
 
         Ok(Some(guard))
-    } else {
-        Ok(None)
     }
+
+    #[cfg(not(debug_assertions))]
+    Ok(None)
 }
