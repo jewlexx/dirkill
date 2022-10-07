@@ -36,7 +36,7 @@ fn main() -> anyhow::Result<()> {
         }
     };
 
-    let mut app = App::new(rgb);
+    let mut app = App::new((0, 0, 0));
 
     thread::spawn(move || {
         files::get_files(&args, qualified_dir);
