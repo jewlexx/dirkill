@@ -14,7 +14,7 @@ use tui::{
     Frame, Terminal,
 };
 
-use crate::DirEntry;
+use crate::files::DirEntry;
 
 pub fn pre_exit() -> anyhow::Result<()> {
     use crossterm::terminal::{disable_raw_mode, LeaveAlternateScreen};

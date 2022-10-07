@@ -1,15 +1,6 @@
 use std::path::Path;
 
-use args::DirKillArgs;
-
-use crate::app::ENTRIES;
-
-pub mod app;
-pub mod args;
-pub mod logs;
-
-#[macro_use]
-extern crate tracing;
+use crate::{app::ENTRIES, args::DirKillArgs};
 
 #[derive(Debug, Clone)]
 pub struct DirEntry {
