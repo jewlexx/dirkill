@@ -7,6 +7,8 @@ use tui::style::Color;
 pub enum ColorError {
     #[error("Invalid hex provided")]
     InvalidHex,
+    #[error("Hex value includes alpha channel")]
+    IncludesAlpha,
 }
 
 fn validate_chars(chars: Chars) -> bool {
@@ -23,6 +25,12 @@ pub fn parse_hex(raw_hex: impl AsRef<str>) -> Result<Color, ColorError> {
     let hex_value = raw_hex.trim_start_matches("#");
 
     validate_chars(hex_value.chars());
+
+    let hex_value_len = hex_value.len();
+
+    if hex_value_len == 4 || hex_value_len == 8 {
+        return Err(ColorError::IncludesAlpha);
+    }
 
     // TMP
     Ok(Color::Yellow)
