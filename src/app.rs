@@ -164,7 +164,7 @@ impl App {
 
         let block = Block::default();
 
-        let list_entries = ENTRIES
+        let mut list_entries = ENTRIES
             .lock()
             .iter()
             .map(|dir| {
@@ -177,11 +177,22 @@ impl App {
                     None => {}
                 }
 
-                Row::new([dir.entry.path().display().to_string(), size])
+                (dir.entry.path().display().to_string(), size)
             })
             .collect::<Vec<_>>();
 
-        let table = Table::new(list_entries)
+        list_entries.sort_by(|old, entry| match self.sorting {
+            Sorting::Name => old.0.cmp(&entry.0),
+            Sorting::Size => old.1.cmp(&entry.0),
+            Sorting::None => std::cmp::Ordering::Equal,
+        });
+
+        let list_rows = list_entries
+            .iter()
+            .map(|entry| Row::new([entry.0.clone(), entry.1.clone()]))
+            .collect::<Vec<_>>();
+
+        let table = Table::new(list_rows)
             .style(Style::default().bg(Color::Black))
             .header(
                 Row::new([
