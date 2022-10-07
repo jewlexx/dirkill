@@ -10,6 +10,7 @@ use tui::{
     backend::{Backend, CrosstermBackend},
     layout::{Constraint, Layout},
     style::{Color, Modifier, Style},
+    text,
     widgets::{Block, Borders, Row, Table, TableState},
     Frame, Terminal,
 };
@@ -121,13 +122,7 @@ impl App {
 
         let loading = *LOADING.lock();
 
-        let block_title = if loading {
-            "Loading..."
-        } else {
-            "Found all paths"
-        };
-
-        let block = Block::default().title(block_title);
+        let block = Block::default();
 
         let list_entries = ENTRIES
             .lock()
@@ -148,7 +143,10 @@ impl App {
 
         let table = Table::new(list_entries)
             .style(Style::default().bg(Color::Black))
-            .header(Row::new(["Path", "Size"]).style(Style::default().add_modifier(Modifier::BOLD)))
+            .header(
+                Row::new([if loading { "Path [LOADING...]" } else { "Path" }, "Size"])
+                    .style(Style::default().add_modifier(Modifier::BOLD)),
+            )
             .block(block)
             .highlight_style(
                 Style::default()
