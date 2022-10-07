@@ -33,6 +33,19 @@ fn validate_hex_len(len: usize) -> Result<(), ColorError> {
     Ok(())
 }
 
+fn hex_3_to_6<'a>(hex: &str) -> String {
+    let mut hex = String::new();
+
+    for c in hex.chars() {
+        // Double the given char to create 6 digit hex
+        // More info here <https://www.w3schools.com/css/css_colors_hex.asp>
+        hex.push(c);
+        hex.push(c);
+    }
+
+    hex
+}
+
 pub fn parse_hex(raw_hex: impl AsRef<str>) -> Result<Color, ColorError> {
     let raw_hex = raw_hex.as_ref();
 
