@@ -30,8 +30,6 @@ fn main() -> anyhow::Result<()> {
     thread::spawn(move || {
         files::get_files(&args, qualified_dir);
     });
-    // .join()
-    // .unwrap();
 
     app.run()?;
 
