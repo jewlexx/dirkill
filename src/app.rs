@@ -162,8 +162,6 @@ impl App {
             .margin(5)
             .split(frame.size());
 
-        let loading = *LOADING.lock();
-
         let block = Block::default();
 
         let list_entries = ENTRIES
