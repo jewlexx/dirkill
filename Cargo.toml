@@ -5,7 +5,11 @@ edition = "2021"
 license = "MIT OR Apache-2.0"
 description = "Stupidly fast directory deletion"
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+# Publishing profile for building the binary
+[profile.release-publish]
+inherits = "release"
+lto = true
+codegen-units = 1
 
 [dependencies]
 anyhow = "1.0"
