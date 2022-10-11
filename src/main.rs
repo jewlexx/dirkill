@@ -15,8 +15,11 @@ mod logs;
 #[macro_use]
 extern crate tracing;
 
-fn main() -> anyhow::Result<()> {
-    let guard = logs::init_tracing()?;
+fn main() {
+    if logs::init_tracing().is_err() && cfg!(not(profile = "release")) {
+        panic!("Failed to initialize tracing");
+    };
+
     std::panic::set_hook(Box::new(|_| {
         app::pre_exit().unwrap();
     }));
@@ -25,12 +28,11 @@ fn main() -> anyhow::Result<()> {
 
     let args = DirKillArgs::parse();
 
-    let qualified_dir = dunce::canonicalize(&args.dir)?;
+    let qualified_dir = dunce::canonicalize(&args.dir).expect("Failed to canonicalize path");
 
-    let color = if let Some(ref hex) = args.color {
-        color::parse_hex(hex)?
-    } else {
-        Color::Yellow
+    let color = match args.color.as_ref().map(color::parse_hex) {
+        Some(Ok(color)) => color,
+        _ => Color::Yellow,
     };
 
     let mut app = App::new(color);
@@ -39,9 +41,7 @@ fn main() -> anyhow::Result<()> {
         files::get_files(&args, qualified_dir);
     });
 
-    app.run()?;
-
-    drop(guard);
-
-    Ok(())
+    if app.run().is_err() {
+        error!("Failed to run app");
+    };
 }

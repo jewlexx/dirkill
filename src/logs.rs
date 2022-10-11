@@ -1,5 +1,6 @@
 use std::{fs::File, path::PathBuf};
 
+use parking_lot::Mutex;
 use strip_ansi_escapes::Writer;
 use tracing::Level;
 use tracing_appender::non_blocking::WorkerGuard;
@@ -22,7 +23,9 @@ fn get_log_path() -> std::io::Result<PathBuf> {
     Ok(base_path)
 }
 
-pub fn init_tracing() -> anyhow::Result<WorkerGuard> {
+static TRACING_GUARD: Mutex<Option<WorkerGuard>> = Mutex::new(None);
+
+pub fn init_tracing() -> anyhow::Result<()> {
     let mut path = get_log_path()?;
     let file_name = chrono::Local::now()
         .format("dir-kill.%Y-%m-%d_%H-%M-%S.log")
@@ -41,5 +44,7 @@ pub fn init_tracing() -> anyhow::Result<WorkerGuard> {
         .with_writer(non_blocking)
         .init();
 
-    Ok(guard)
+    *TRACING_GUARD.lock() = Some(guard);
+
+    Ok(())
 }
