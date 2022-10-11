@@ -21,9 +21,8 @@ fn main() {
     };
 
     std::panic::set_hook(Box::new(|info| {
-        app::pre_exit().unwrap();
-
         println!("{}", info);
+        app::pre_exit().unwrap();
     }));
 
     info!("Starting dirkill");
