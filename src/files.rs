@@ -63,6 +63,7 @@ pub fn get_files(args: &DirKillArgs, search_dir: impl AsRef<Path> + core::fmt::D
                 };
 
                 if is_target && entry.entry.file_type().is_dir() {
+                    iter.skip_current_dir();
                     debug!("Found dir {}", path.display());
                     ENTRIES.lock().push(entry);
                 }
