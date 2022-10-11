@@ -44,6 +44,7 @@ pub fn get_files(args: &DirKillArgs, search_dir: impl AsRef<Path> + core::fmt::D
     loop {
         match iter.next() {
             Some(Ok(entry)) => {
+                debug!("Found entry {}", entry.path().display());
                 let entry: DirEntry = entry.into();
                 let path = entry.entry.path();
                 let is_target = {

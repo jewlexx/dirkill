@@ -206,8 +206,6 @@ impl App {
             .lock()
             .iter()
             .map(|dir| {
-                debug!("Showing entry in tui: {}", dir.entry.path().display());
-
                 (
                     dir.entry.path().display().to_string(),
                     (dir.size, dir.deleting),
