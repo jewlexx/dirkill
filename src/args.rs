@@ -21,4 +21,7 @@ pub struct DirKillArgs {
         help = "The highlight color to use for the selected entry. Must be a hex value"
     )]
     pub color: Option<String>,
+
+    #[clap(short, long, help = "Whether or not to follow symlinks")]
+    pub follow_links: bool,
 }
