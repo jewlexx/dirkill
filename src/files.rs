@@ -54,6 +54,7 @@ pub fn get_files(args: &DirKillArgs, search_dir: impl AsRef<Path> + core::fmt::D
                     .unwrap_or(false);
 
                 if is_target && entry.entry.file_type().is_dir() {
+                    // Do not continue searching the directory, as it is the target directory
                     iter.skip_current_dir();
                     debug!("Found dir {}", path.display());
                     ENTRIES.lock().push(entry);
