@@ -236,7 +236,7 @@ impl App {
 
                     match entry.1 .1 {
                         Some(true) => size = "[DELETED]".to_owned(),
-                        Some(false) => size.push_str(" [DELETING]"),
+                        Some(false) => size.push_str(" [DELETING...]"),
                         None => {}
                     }
 
