@@ -47,21 +47,11 @@ pub fn get_files(args: &DirKillArgs, search_dir: impl AsRef<Path> + core::fmt::D
                 debug!("Found entry {}", entry.path().display());
                 let entry: DirEntry = entry.into();
                 let path = entry.entry.path();
-                let is_target = {
-                    let is_based = path
-                        .components()
-                        .filter(|c| c.as_os_str() == target_dir)
-                        .count()
-                        == 1;
-
-                    let is_target = path
-                        .components()
-                        .last()
-                        .map(|x| x.as_os_str() == target_dir)
-                        .unwrap_or(false);
-
-                    is_based && is_target
-                };
+                let is_target = path
+                    .components()
+                    .last()
+                    .map(|x| x.as_os_str() == target_dir)
+                    .unwrap_or(false);
 
                 if is_target && entry.entry.file_type().is_dir() {
                     iter.skip_current_dir();
