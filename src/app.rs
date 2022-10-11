@@ -203,25 +203,26 @@ impl App {
 
         let block = Block::default();
 
-        let mut unsorted_entries = ENTRIES.lock();
+        let list_entries = {
+            let mut unsorted_entries = ENTRIES.lock();
 
-        unsorted_entries.sort_by(|old, entry| match self.sorting {
-            Sorting::Name => old.entry.path().cmp(entry.entry.path()),
-            // For some reason size sorting is inverted so we have to invert it back :)
-            Sorting::Size => entry.size.cmp(&old.size),
-            Sorting::None => std::cmp::Ordering::Equal,
-        });
+            unsorted_entries.sort_by(|old, entry| match self.sorting {
+                Sorting::Name => old.entry.path().cmp(entry.entry.path()),
+                // For some reason size sorting is inverted so we have to invert it back :)
+                Sorting::Size => entry.size.cmp(&old.size),
+                Sorting::None => std::cmp::Ordering::Equal,
+            });
 
-        let list_entries = ENTRIES
-            .lock()
-            .iter()
-            .map(|dir| {
-                (
-                    dir.entry.path().display().to_string(),
-                    (dir.size, dir.deleting),
-                )
-            })
-            .collect::<Vec<_>>();
+            unsorted_entries
+                .iter()
+                .map(|dir| {
+                    (
+                        dir.entry.path().display().to_string(),
+                        (dir.size, dir.deleting),
+                    )
+                })
+                .collect::<Vec<_>>()
+        };
 
         let list_rows = list_entries
             .iter()
