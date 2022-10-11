@@ -20,8 +20,10 @@ fn main() {
         panic!("Failed to initialize tracing");
     };
 
-    std::panic::set_hook(Box::new(|_| {
+    std::panic::set_hook(Box::new(|info| {
         app::pre_exit().unwrap();
+
+        println!("{}", info);
     }));
 
     info!("Starting dirkill");
