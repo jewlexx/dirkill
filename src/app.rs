@@ -140,16 +140,23 @@ impl App {
         std::thread::spawn(move || {
             let mut entries = ENTRIES.lock();
 
-            entries.get_mut(index).unwrap().deleting = Some(false);
+            // This must be a separate line to ensure that entries is not borrowed twice
+            if entries.get_mut(index).unwrap().deleting.is_some() {
+                entries.remove(index);
+            }
 
-            let p = entries.get_mut(index).unwrap().entry.path();
+            let mut entry = entries.get_mut(index).unwrap();
+
+            entry.deleting = Some(false);
+
+            let p = entry.entry.path();
 
             match std::fs::remove_dir_all(p) {
                 Ok(_) => {
-                    entries.get_mut(index).unwrap().deleting = Some(true);
+                    entry.deleting = Some(true);
                 }
                 Err(_) => {
-                    entries.get_mut(index).unwrap().deleting = None;
+                    entry.deleting = None;
                 }
             };
         });
