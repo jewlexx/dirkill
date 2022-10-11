@@ -22,6 +22,6 @@ pub struct DirKillArgs {
     )]
     pub color: Option<String>,
 
-    #[clap(short, long, help = "Whether or not to follow symlinks")]
+    #[clap(short = 'l', long, help = "Whether or not to follow symlinks")]
     pub follow_links: bool,
 }

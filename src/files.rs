@@ -36,7 +36,7 @@ pub fn get_files(args: &DirKillArgs, search_dir: impl AsRef<Path> + core::fmt::D
     debug!("Searching for files in {:?}", search_dir);
 
     let mut iter = walkdir::WalkDir::new(search_dir)
-        .follow_links(false)
+        .follow_links(args.follow_links)
         .into_iter();
 
     debug!("Getting files");
