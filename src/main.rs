@@ -16,6 +16,7 @@ mod logs;
 extern crate tracing;
 
 fn main() {
+    // Do not bother panicking on release if tracing cannot initialize
     if logs::init_tracing().is_err() && cfg!(not(profile = "release")) {
         panic!("Failed to initialize tracing");
     };
