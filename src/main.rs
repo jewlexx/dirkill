@@ -10,14 +10,17 @@ mod app;
 mod args;
 mod color;
 mod files;
+
+#[cfg(debug_assertions)]
 mod logs;
 
 #[macro_use]
 extern crate tracing;
 
 fn main() {
-    // Do not bother panicking on release if tracing cannot initialize
-    if logs::init_tracing().is_err() && cfg!(not(profile = "release")) {
+    // Do not bother initializing tracing if we are not in debug mode
+    #[cfg(debug_assertions)]
+    if logs::init_tracing().is_err() {
         panic!("Failed to initialize tracing");
     };
 
