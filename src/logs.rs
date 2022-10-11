@@ -23,14 +23,12 @@ fn get_log_path() -> std::io::Result<PathBuf> {
     Ok(base_path)
 }
 
-#[cfg(not(profile = "release"))]
+#[cfg(debug_assertions)]
 static TRACING_GUARD: Mutex<Option<WorkerGuard>> = Mutex::new(None);
 
 pub fn init_tracing() -> anyhow::Result<()> {
     cfg_if::cfg_if! {
-        if #[cfg(profile = "release")] {
-            Ok(())
-        } else {
+        if #[cfg(debug_assertions)] {
             let mut path = get_log_path()?;
             let file_name = chrono::Local::now()
                 .format("dir-kill.%Y-%m-%d_%H-%M-%S.log")
@@ -50,8 +48,8 @@ pub fn init_tracing() -> anyhow::Result<()> {
                 .init();
 
             *TRACING_GUARD.lock() = Some(guard);
-
-            Ok(())
         }
     }
+
+    Ok(())
 }
