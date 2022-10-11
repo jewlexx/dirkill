@@ -139,13 +139,6 @@ impl App {
     fn delete_entry(&mut self, index: usize) {
         let mut entries = ENTRIES.lock();
 
-        entries.sort_by(|old, entry| match self.sorting {
-            Sorting::Name => old.entry.file_name().cmp(entry.entry.file_name()),
-            // For some reason size sorting is inverted so we have to invert it back :)
-            Sorting::Size => entry.size.cmp(&old.size),
-            Sorting::None => std::cmp::Ordering::Equal,
-        });
-
         let entry = entries.get_mut(index).cloned().unwrap();
 
         entries.get_mut(index).unwrap().deleting = Some(false);
