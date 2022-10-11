@@ -137,15 +137,12 @@ impl App {
     }
 
     fn delete_entry(&mut self, index: usize) {
-        let mut entries = ENTRIES.lock();
-
-        let entry = entries.get_mut(index).cloned().unwrap();
-
-        entries.get_mut(index).unwrap().deleting = Some(false);
+        ENTRIES.lock().get_mut(index).unwrap().deleting = Some(false);
 
         std::thread::spawn(move || {
-            let p = entry.entry.path();
             let mut entries = ENTRIES.lock();
+
+            let p = entries.get_mut(index).unwrap().entry.path();
 
             match std::fs::remove_dir_all(p) {
                 Ok(_) => {
