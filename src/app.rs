@@ -85,8 +85,6 @@ impl App {
         } else {
             self.index = 0;
         }
-
-        self.state.select(Some(self.index));
     }
 
     pub fn previous(&mut self) {
@@ -97,8 +95,6 @@ impl App {
         } else {
             self.index = entries_len - 1;
         }
-
-        self.state.select(Some(self.index));
     }
 
     pub fn run(&mut self) -> anyhow::Result<()> {
@@ -169,6 +165,8 @@ impl App {
     }
 
     fn ui<B: Backend>(&mut self, frame: &mut Frame<B>) {
+        self.state.select(Some(self.index));
+
         let chunks = Layout::default()
             .constraints([
                 Constraint::Percentage(5),
