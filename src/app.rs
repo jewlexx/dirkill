@@ -137,7 +137,9 @@ impl App {
     }
 
     fn delete_entry(&mut self, index: usize) {
-        ENTRIES.lock().get_mut(index).unwrap().deleting = Some(false);
+        {
+            ENTRIES.lock().get_mut(index).unwrap().deleting = Some(false);
+        }
 
         std::thread::spawn(move || {
             let mut entries = ENTRIES.lock();
