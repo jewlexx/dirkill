@@ -210,7 +210,16 @@ impl App {
 
         let block = Block::default();
 
-        let mut list_entries = ENTRIES
+        let mut unsorted_entries = ENTRIES.lock();
+
+        unsorted_entries.sort_by(|old, entry| match self.sorting {
+            Sorting::Name => old.entry.path().cmp(entry.entry.path()),
+            // For some reason size sorting is inverted so we have to invert it back :)
+            Sorting::Size => entry.size.cmp(&old.size),
+            Sorting::None => std::cmp::Ordering::Equal,
+        });
+
+        let list_entries = ENTRIES
             .lock()
             .iter()
             .map(|dir| {
@@ -220,13 +229,6 @@ impl App {
                 )
             })
             .collect::<Vec<_>>();
-
-        list_entries.sort_by(|old, entry| match self.sorting {
-            Sorting::Name => old.0.cmp(&entry.0),
-            // For some reason size sorting is inverted so we have to invert it back :)
-            Sorting::Size => entry.1 .0.cmp(&old.1 .0),
-            Sorting::None => std::cmp::Ordering::Equal,
-        });
 
         let list_rows = list_entries
             .iter()
