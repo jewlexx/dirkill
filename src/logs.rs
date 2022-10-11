@@ -22,7 +22,6 @@ fn get_log_path() -> std::io::Result<PathBuf> {
     Ok(base_path)
 }
 
-#[no_panic]
 pub fn init_tracing() -> anyhow::Result<WorkerGuard> {
     let mut path = get_log_path()?;
     let file_name = chrono::Local::now()
