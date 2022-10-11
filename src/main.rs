@@ -12,38 +12,8 @@ mod color;
 mod files;
 mod logs;
 
-#[cfg(not(profile = "release"))]
 #[macro_use]
 extern crate tracing;
-
-#[cfg(profile = "release")]
-#[macro_use]
-mod log_macros {
-    #[macro_export]
-    macro_rules! info {
-        ($($arg:tt)*) => {};
-    }
-
-    #[macro_export]
-    macro_rules! debug {
-        ($($arg:tt)*) => {};
-    }
-
-    #[macro_export]
-    macro_rules! error {
-        ($($arg:tt)*) => {};
-    }
-
-    #[macro_export]
-    macro_rules! warn {
-        ($($arg:tt)*) => {};
-    }
-
-    #[macro_export]
-    macro_rules! trace {
-        ($($arg:tt)*) => {};
-    }
-}
 
 fn main() -> anyhow::Result<()> {
     let guard = logs::init_tracing()?;

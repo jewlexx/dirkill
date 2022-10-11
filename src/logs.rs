@@ -23,29 +23,23 @@ fn get_log_path() -> PathBuf {
 }
 
 pub fn init_tracing() -> anyhow::Result<Option<WorkerGuard>> {
-    #[cfg(not(profile = "release"))]
-    {
-        let mut path = get_log_path();
-        let file_name = chrono::Local::now()
-            .format("dir-kill.%Y-%m-%d_%H-%M-%S.log")
-            .to_string();
+    let mut path = get_log_path();
+    let file_name = chrono::Local::now()
+        .format("dir-kill.%Y-%m-%d_%H-%M-%S.log")
+        .to_string();
 
-        path.push(file_name);
+    path.push(file_name);
 
-        let file = File::create(path).unwrap();
+    let file = File::create(path).unwrap();
 
-        let (non_blocking, guard) = tracing_appender::non_blocking(Writer::new(file));
+    let (non_blocking, guard) = tracing_appender::non_blocking(Writer::new(file));
 
-        tracing_subscriber::fmt()
-            .with_span_events(FmtSpan::NEW | FmtSpan::CLOSE | FmtSpan::ENTER | FmtSpan::EXIT)
-            .with_thread_names(true)
-            .with_max_level(Level::DEBUG)
-            .with_writer(non_blocking)
-            .init();
+    tracing_subscriber::fmt()
+        .with_span_events(FmtSpan::NEW | FmtSpan::CLOSE | FmtSpan::ENTER | FmtSpan::EXIT)
+        .with_thread_names(true)
+        .with_max_level(Level::DEBUG)
+        .with_writer(non_blocking)
+        .init();
 
-        Ok(Some(guard))
-    }
-
-    #[cfg(profile = "release")]
-    Ok(None)
+    Ok(Some(guard))
 }
