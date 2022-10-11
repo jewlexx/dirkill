@@ -13,8 +13,12 @@ mod files;
 mod logs;
 
 #[macro_use]
+extern crate no_panic;
+
+#[macro_use]
 extern crate tracing;
 
+#[no_panic]
 fn main() -> anyhow::Result<()> {
     let guard = logs::init_tracing()?;
     std::panic::set_hook(Box::new(|_| {
