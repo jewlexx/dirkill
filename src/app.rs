@@ -63,6 +63,7 @@ pub struct App {
     state: TableState,
     highlight_color: Color,
     sorting: Sorting,
+    sorting_inverted: bool,
 }
 
 impl App {
@@ -72,6 +73,7 @@ impl App {
             state: TableState::default(),
             highlight_color,
             sorting: Sorting::default(),
+            sorting_inverted: false,
         }
     }
 
@@ -114,6 +116,9 @@ impl App {
                         KeyCode::Char('q') => break,
                         KeyCode::Down => self.next(),
                         KeyCode::Up => self.previous(),
+                        KeyCode::Tab | KeyCode::BackTab => {
+                            self.sorting_inverted = !self.sorting_inverted
+                        }
                         KeyCode::Right => {
                             let old: usize = self.sorting.into();
 
@@ -196,7 +201,7 @@ impl App {
         frame.render_widget(title, chunks[0]);
 
         let s = Span::styled(
-            "Controls: <Left/Right> - Sort, <Up/Down> - Navigate, <Enter> - Delete, <q> - Quit",
+            "Controls: <Left/Right> - Sort, <Tab> - Invert Sort, <Up/Down> - Navigate, <Enter> - Delete, <q> - Quit",
             Style::default()
                 .fg(Color::White)
                 .add_modifier(Modifier::BOLD),
@@ -217,6 +222,10 @@ impl App {
                 Sorting::Size => entry.size.cmp(&old.size),
                 Sorting::None => std::cmp::Ordering::Equal,
             });
+
+            if self.sorting_inverted {
+                unsorted_entries.reverse();
+            }
 
             unsorted_entries
                 .iter()
