@@ -143,6 +143,7 @@ impl App {
             // This must be a separate line to ensure that entries is not borrowed twice
             if entries.get_mut(index).unwrap().deleting.is_some() {
                 entries.remove(index);
+                return;
             }
 
             let mut entry = entries.get_mut(index).unwrap();
