@@ -2,6 +2,22 @@ use std::path::Path;
 
 use crate::{app::ENTRIES, args::DirKillArgs};
 
+pub fn recursive_size(path: impl AsRef<Path>) -> u64 {
+    let path = path.as_ref();
+    let mut size = 0;
+
+    if path.is_dir() {
+        for entry in path.read_dir().unwrap() {
+            let entry = entry.unwrap();
+            size += recursive_size(&entry.path());
+        }
+    } else {
+        size += path.metadata().unwrap().len();
+    }
+
+    size
+}
+
 #[derive(Debug, Clone)]
 pub struct DirEntry {
     pub size: u64,
@@ -12,13 +28,7 @@ pub struct DirEntry {
 
 impl From<walkdir::DirEntry> for DirEntry {
     fn from(entry: walkdir::DirEntry) -> Self {
-        let meta = entry.metadata().unwrap();
-
-        let size = if meta.is_dir() {
-            fs_extra::dir::get_size(entry.path()).unwrap()
-        } else {
-            meta.len()
-        };
+        let size = recursive_size(entry.path());
 
         Self {
             size,
@@ -66,4 +76,17 @@ pub fn get_files(args: &DirKillArgs, search_dir: impl AsRef<Path> + core::fmt::D
     }
 
     *crate::app::LOADING.lock() = false;
+}
+
+#[cfg(test)]
+mod tests {
+    use super::recursive_size;
+
+    #[test]
+    fn test_recursive_size() {
+        let src_size = recursive_size("src");
+        let extra_src_size = fs_extra::dir::get_size("src").unwrap();
+
+        assert_eq!(src_size, extra_src_size);
+    }
 }

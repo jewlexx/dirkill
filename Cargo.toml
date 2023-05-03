@@ -14,13 +14,12 @@ strip = true
 
 [dependencies]
 anyhow = "1.0"
-bytesize = "1.1"
+bytesize = "1.2"
 cfg-if = "1.0"
 chrono = "0.4"
-clap = { version = "4.0", features = ["derive"] }
-crossterm = "0.25"
+clap = { version = "4.2", features = ["derive"] }
+crossterm = "0.26.1"
 dunce = "1.0"
-fs_extra = "1.2"
 parking_lot = "0.12"
 strip-ansi-escapes = "0.1"
 thiserror = "1.0"
@@ -29,3 +28,6 @@ walkdir = "2.3"
 tracing = "0.1"
 tracing-appender = "0.2"
 tracing-subscriber = "0.3"
+
+[dev-dependencies]
+fs_extra = "1.3"
