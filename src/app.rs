@@ -28,12 +28,11 @@ pub fn pre_exit() -> anyhow::Result<()> {
 
 pub static ENTRIES: Mutex<Vec<DirEntry>> = Mutex::new(Vec::new());
 pub static LOADING: Mutex<bool> = Mutex::new(true);
+pub static CHANGED: Mutex<bool> = Mutex::new(false);
 
 #[derive(Default, Debug, Copy, Clone, PartialEq, Eq)]
 pub enum Sorting {
     #[default]
-    None,
-
     Name,
     Size,
 }
@@ -41,9 +40,8 @@ pub enum Sorting {
 impl From<usize> for Sorting {
     fn from(value: usize) -> Self {
         match value {
-            1 => Sorting::Name,
-            2 => Sorting::Size,
-            _ => Sorting::None,
+            1 => Sorting::Size,
+            _ => Sorting::Name,
         }
     }
 }
@@ -51,9 +49,8 @@ impl From<usize> for Sorting {
 impl From<Sorting> for usize {
     fn from(value: Sorting) -> Self {
         match value {
-            Sorting::Name => 1,
-            Sorting::Size => 2,
-            Sorting::None => 0,
+            Sorting::Name => 0,
+            Sorting::Size => 1,
         }
     }
 }
@@ -107,7 +104,9 @@ impl App {
         let mut terminal = Terminal::new(CrosstermBackend::new(io::stdout()))?;
 
         loop {
-            terminal.draw(|f| self.ui(f))?;
+            if *CHANGED.lock() {
+                terminal.draw(|f| self.ui(f))?;
+            }
 
             if event::poll(Duration::from_millis(16))? {
                 if let Event::Key(key) = event::read()? {
@@ -128,9 +127,10 @@ impl App {
 
                             self.sorting = if old == 0 { 2 } else { old - 1 }.into();
                         }
-                        // KeyCode::Enter => self.delete_entry(self.index),
+                        KeyCode::Enter => self.delete_entry(self.index),
                         _ => {}
                     }
+                    *CHANGED.lock() = true;
                 }
             }
         }
@@ -222,7 +222,6 @@ impl App {
                 Sorting::Name => old.entry.path().cmp(entry.entry.path()),
                 // For some reason size sorting is inverted so we have to invert it back :)
                 Sorting::Size => entry.size.cmp(&old.size),
-                Sorting::None => std::cmp::Ordering::Equal,
             });
 
             if self.sorting_inverted {

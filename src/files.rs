@@ -1,6 +1,9 @@
 use std::path::Path;
 
-use crate::{app::ENTRIES, args::DirKillArgs};
+use crate::{
+    app::{CHANGED, ENTRIES},
+    args::DirKillArgs,
+};
 
 #[tracing::instrument]
 pub fn recursive_size(path: impl AsRef<Path> + std::fmt::Debug) -> u64 {
@@ -68,6 +71,7 @@ pub fn get_files(args: &DirKillArgs, search_dir: impl AsRef<Path> + core::fmt::D
                     iter.skip_current_dir();
                     debug!("Found dir {}", path.display());
                     ENTRIES.lock().push(entry.into());
+                    *CHANGED.lock() = true;
                 }
             }
             None => break,
