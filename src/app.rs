@@ -78,6 +78,7 @@ impl App {
         }
     }
 
+    #[tracing::instrument]
     pub fn next(&mut self) {
         let entries_len = ENTRIES.lock().len();
 
@@ -88,6 +89,7 @@ impl App {
         }
     }
 
+    #[tracing::instrument]
     pub fn previous(&mut self) {
         let entries_len = ENTRIES.lock().len();
 
