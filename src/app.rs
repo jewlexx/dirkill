@@ -29,7 +29,7 @@ pub fn pre_exit() -> anyhow::Result<()> {
 pub static ENTRIES: Mutex<Vec<DirEntry>> = Mutex::new(Vec::new());
 pub static LOADING: Mutex<bool> = Mutex::new(true);
 
-#[derive(Default, Copy, Clone, PartialEq, Eq)]
+#[derive(Default, Debug, Copy, Clone, PartialEq, Eq)]
 pub enum Sorting {
     #[default]
     None,
@@ -58,6 +58,7 @@ impl From<Sorting> for usize {
     }
 }
 
+#[derive(Debug)]
 pub struct App {
     index: usize,
     state: TableState,
@@ -91,9 +92,9 @@ impl App {
         let entries_len = ENTRIES.lock().len();
 
         if self.index > 0 {
-            self.index -= 1;
+            self.index = self.index.wrapping_sub(1);
         } else {
-            self.index = entries_len - 1;
+            self.index = entries_len.wrapping_sub(1);
         }
     }
 
@@ -125,7 +126,7 @@ impl App {
 
                             self.sorting = if old == 0 { 2 } else { old - 1 }.into();
                         }
-                        KeyCode::Enter => self.delete_entry(self.index),
+                        // KeyCode::Enter => self.delete_entry(self.index),
                         _ => {}
                     }
                 }
@@ -137,6 +138,7 @@ impl App {
         Ok(())
     }
 
+    #[tracing::instrument]
     fn delete_entry(&mut self, index: usize) {
         std::thread::spawn(move || {
             let mut entries = ENTRIES.lock();

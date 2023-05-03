@@ -2,7 +2,8 @@ use std::path::Path;
 
 use crate::{app::ENTRIES, args::DirKillArgs};
 
-pub fn recursive_size(path: impl AsRef<Path>) -> u64 {
+#[tracing::instrument]
+pub fn recursive_size(path: impl AsRef<Path> + std::fmt::Debug) -> u64 {
     let path = path.as_ref();
     let mut size = 0;
 
@@ -12,7 +13,7 @@ pub fn recursive_size(path: impl AsRef<Path>) -> u64 {
             size += recursive_size(&entry.path());
         }
     } else {
-        size += path.metadata().unwrap().len();
+        size += path.metadata().map(|x| x.len()).unwrap_or_default();
     }
 
     size
@@ -55,19 +56,18 @@ pub fn get_files(args: &DirKillArgs, search_dir: impl AsRef<Path> + core::fmt::D
         match iter.next() {
             Some(Ok(entry)) => {
                 debug!("Found entry {}", entry.path().display());
-                let entry: DirEntry = entry.into();
-                let path = entry.entry.path();
+                let path = entry.path();
                 let is_target = path
                     .components()
                     .last()
                     .map(|x| x.as_os_str() == target_dir)
                     .unwrap_or(false);
 
-                if is_target && entry.entry.file_type().is_dir() {
+                if is_target && entry.file_type().is_dir() {
                     // Do not continue searching the directory, as it is the target directory
                     iter.skip_current_dir();
                     debug!("Found dir {}", path.display());
-                    ENTRIES.lock().push(entry);
+                    ENTRIES.lock().push(entry.into());
                 }
             }
             None => break,
