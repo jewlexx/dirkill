@@ -216,7 +216,7 @@ impl App {
         let list_entries = {
             let mut unsorted_entries = ENTRIES.lock();
 
-            unsorted_entries.sort_by(|old, entry| match self.sorting {
+            unsorted_entries.sort_unstable_by(|old, entry| match self.sorting {
                 Sorting::Name => old.entry.path().cmp(entry.entry.path()),
                 // For some reason size sorting is inverted so we have to invert it back :)
                 Sorting::Size => entry.size.cmp(&old.size),
