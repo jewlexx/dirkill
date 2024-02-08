@@ -109,8 +109,10 @@ impl App {
                 terminal.draw(|f| self.ui(f))?;
             }
 
-            if event::poll(Duration::from_millis(16))? {
+            if event::poll(Duration::ZERO)? {
+                // TODO: For some reason this is returning an event twice
                 if let Event::Key(key) = event::read()? {
+                    debug!("{key:#?} pressed.");
                     match key.code {
                         KeyCode::Char('q') => break,
                         KeyCode::Down => self.next(),
