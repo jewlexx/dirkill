@@ -7,11 +7,11 @@ use crossterm::{
     terminal::{enable_raw_mode, EnterAlternateScreen},
 };
 use parking_lot::{Mutex, MutexGuard};
-use tui::{
-    backend::{Backend, CrosstermBackend},
+use ratatui::{
+    backend::CrosstermBackend,
     layout::{Alignment, Constraint, Layout},
     style::{Color, Modifier, Style},
-    text::{Span, Spans},
+    text::{Line, Span},
     widgets::{Block, Paragraph, Row, Table, TableState},
     Frame, Terminal,
 };
@@ -196,14 +196,14 @@ impl App {
                 Err(_) => {
                     entries.map(|mut guard| {
                         let entry = guard.get_mut(index).unwrap();
-                        entry.deletion_state = DeletionState::Deleted;
+                        entry.deletion_state = DeletionState::Error;
                     });
                 }
             };
         });
     }
 
-    fn ui<B: Backend>(&mut self, frame: &mut Frame<B>) {
+    fn ui(&mut self, frame: &mut Frame) {
         self.state.select(Some(self.index));
 
         let chunks = Layout::default()
@@ -226,7 +226,7 @@ impl App {
 
         let love = Span::styled("♥", Style::default().fg(Color::Red));
 
-        let title = Paragraph::new(Spans::from(vec![
+        let title = Paragraph::new(Line::from(vec![
             title,
             Span::from(" was made with "),
             love,
@@ -292,43 +292,45 @@ impl App {
             })
             .collect::<Vec<_>>();
 
-        let table = Table::new(list_rows)
-            .style(Style::default().bg(Color::Black))
-            .header(
-                Row::new([
-                    {
-                        let path_base = if self.sorting == Sorting::Name {
-                            "> Path"
-                        } else {
-                            "Path"
-                        };
-
-                        format!(
-                            "{}{}",
-                            path_base,
-                            if *LOADING.lock() { " [LOADING]" } else { "" }
-                        )
-                    },
-                    if self.sorting == Sorting::Size {
-                        "> Size"
-                    } else {
-                        "Size"
-                    }
-                    .to_owned(),
-                ])
-                .style(Style::default().add_modifier(Modifier::BOLD)),
-            )
-            .block(block)
-            .highlight_style(
-                Style::default()
-                    .bg(self.highlight_color)
-                    .add_modifier(Modifier::BOLD),
-            )
-            .widths(&[
+        let table = Table::new(
+            list_rows,
+            &[
                 Constraint::Percentage(50),
                 Constraint::Length(30),
                 Constraint::Min(10),
-            ]);
+            ],
+        )
+        .style(Style::default().bg(Color::Black))
+        .header(
+            Row::new([
+                {
+                    let path_base = if self.sorting == Sorting::Name {
+                        "> Path"
+                    } else {
+                        "Path"
+                    };
+
+                    format!(
+                        "{}{}",
+                        path_base,
+                        if *LOADING.lock() { " [LOADING]" } else { "" }
+                    )
+                },
+                if self.sorting == Sorting::Size {
+                    "> Size"
+                } else {
+                    "Size"
+                }
+                .to_owned(),
+            ])
+            .style(Style::default().add_modifier(Modifier::BOLD)),
+        )
+        .block(block)
+        .highlight_style(
+            Style::default()
+                .bg(self.highlight_color)
+                .add_modifier(Modifier::BOLD),
+        );
 
         frame.render_stateful_widget(table, chunks[2], &mut self.state);
     }

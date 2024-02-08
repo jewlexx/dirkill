@@ -4,7 +4,7 @@ use clap::Parser;
 
 use app::App;
 use args::DirKillArgs;
-use tui::style::Color;
+use ratatui::style::Color;
 
 mod app;
 mod args;

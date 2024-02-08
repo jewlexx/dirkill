@@ -1,7 +1,7 @@
 use std::{num::ParseIntError, str::Chars};
 
+use ratatui::style::Color;
 use thiserror::Error as AsError;
-use tui::style::Color;
 
 #[derive(Debug, AsError, PartialEq, Eq)]
 pub enum ColorError {
