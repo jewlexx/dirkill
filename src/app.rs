@@ -6,7 +6,7 @@ use crossterm::{
     style::Stylize,
     terminal::{enable_raw_mode, EnterAlternateScreen},
 };
-use parking_lot::Mutex;
+use parking_lot::{Mutex, MutexGuard};
 use tui::{
     backend::{Backend, CrosstermBackend},
     layout::{Alignment, Constraint, Layout},
@@ -143,29 +143,53 @@ impl App {
 
     #[tracing::instrument]
     fn delete_entry(&mut self, index: usize) {
+        struct MutexMapper<'a, T>(&'a Mutex<T>);
+
+        impl<'a, T> MutexMapper<'a, T> {
+            /// Locks a mutex and allows a function to be called on said lock
+            ///
+            /// Is helpful when you need to lock a mutex, and have it unlock as soon as your statement is done
+            pub fn map<R>(&self, func: &dyn Fn(MutexGuard<T>) -> R) -> R {
+                let guard = self.0.lock();
+                func(guard)
+            }
+        }
+
         std::thread::spawn(move || {
-            let mut entries = ENTRIES.lock();
+            let entries = MutexMapper(&ENTRIES);
 
-            let Some(entry) = entries.get_mut(index) else {
-                return;
-            };
+            if entries.map(&|mut guard| {
+                // This must be a separate line to ensure that entries is not borrowed twice
+                if guard.get_mut(index).unwrap().deletion_state == DeletionState::Deleted {
+                    guard.remove(index);
 
-            // This must be a separate line to ensure that entries is not borrowed twice
-            if entry.deletion_state == DeletionState::Deleted {
-                entries.remove(index);
+                    true
+                } else {
+                    false
+                }
+            }) {
                 return;
             }
 
-            entry.deletion_state = DeletionState::Deleting;
+            let entry_path = entries.map(&|mut guard| {
+                let entry = guard.get_mut(index).unwrap();
+                entry.deletion_state = DeletionState::Deleting;
 
-            let p = entry.entry.path();
+                entry.entry.path().to_path_buf()
+            });
 
-            match std::fs::remove_dir_all(p) {
+            match std::fs::remove_dir_all(entry_path) {
                 Ok(_) => {
-                    entry.deletion_state = DeletionState::Deleted;
+                    entries.map(&|mut guard| {
+                        let entry = guard.get_mut(index).unwrap();
+                        entry.deletion_state = DeletionState::Deleted;
+                    });
                 }
                 Err(_) => {
-                    entry.deletion_state = DeletionState::Error;
+                    entries.map(&|mut guard| {
+                        let entry = guard.get_mut(index).unwrap();
+                        entry.deletion_state = DeletionState::Deleted;
+                    });
                 }
             };
         });
