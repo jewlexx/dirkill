@@ -3,6 +3,7 @@ use std::{io, time::Duration};
 use crossterm::{
     event::{self, Event, KeyCode},
     execute,
+    style::Stylize,
     terminal::{enable_raw_mode, EnterAlternateScreen},
 };
 use parking_lot::Mutex;
@@ -15,7 +16,7 @@ use tui::{
     Frame, Terminal,
 };
 
-use crate::files::DirEntry;
+use crate::files::{DeletionState, DirEntry};
 
 pub fn pre_exit() -> anyhow::Result<()> {
     use crossterm::terminal::{disable_raw_mode, LeaveAlternateScreen};
@@ -145,24 +146,26 @@ impl App {
         std::thread::spawn(move || {
             let mut entries = ENTRIES.lock();
 
+            let Some(entry) = entries.get_mut(index) else {
+                return;
+            };
+
             // This must be a separate line to ensure that entries is not borrowed twice
-            if entries.get_mut(index).unwrap().deleting.is_some() {
+            if entry.deleting == DeletionState::Deleted {
                 entries.remove(index);
                 return;
             }
 
-            let entry = entries.get_mut(index).unwrap();
-
-            entry.deleting = Some(false);
+            entry.deleting = DeletionState::Deleting;
 
             let p = entry.entry.path();
 
             match std::fs::remove_dir_all(p) {
                 Ok(_) => {
-                    entry.deleting = Some(true);
+                    entry.deleting = DeletionState::Deleted;
                 }
                 Err(_) => {
-                    entry.deleting = None;
+                    entry.deleting = DeletionState::Error;
                 }
             };
         });
@@ -246,9 +249,10 @@ impl App {
                     let mut size = bytesize::ByteSize(entry.1 .0).to_string();
 
                     match entry.1 .1 {
-                        Some(true) => size = "[DELETED]".to_owned(),
-                        Some(false) => size.push_str(" [DELETING...]"),
-                        None => {}
+                        DeletionState::Deleted => size = "[DELETED]".to_owned(),
+                        DeletionState::Deleting => size.push_str(" [DELETING...]"),
+                        DeletionState::Error => size = "[ERROR DELETING]".red().to_string(),
+                        _ => {}
                     }
 
                     size

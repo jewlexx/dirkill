@@ -22,12 +22,21 @@ pub fn recursive_size(path: impl AsRef<Path> + std::fmt::Debug) -> u64 {
     size
 }
 
+#[derive(Debug, Copy, Clone, Default, PartialEq, Eq)]
+pub enum DeletionState {
+    #[default]
+    Ready,
+    Deleting,
+    Deleted,
+    Error,
+}
+
 #[derive(Debug, Clone)]
 pub struct DirEntry {
     pub size: u64,
     pub entry: walkdir::DirEntry,
     /// None if the entry hasn't been touched. Some(true) if the entry has been deleted, and Some(false) if it is being deleted
-    pub deleting: Option<bool>,
+    pub deleting: DeletionState,
 }
 
 impl From<walkdir::DirEntry> for DirEntry {
@@ -37,7 +46,7 @@ impl From<walkdir::DirEntry> for DirEntry {
         Self {
             size,
             entry,
-            deleting: None,
+            deleting: DeletionState::default(),
         }
     }
 }

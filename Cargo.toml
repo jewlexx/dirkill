@@ -28,6 +28,7 @@ walkdir = "2.4"
 tracing = "0.1"
 tracing-appender = "0.2"
 tracing-subscriber = "0.3"
+colored = "2.1.0"
 
 [dev-dependencies]
 fs_extra = "1.3"
