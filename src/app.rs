@@ -27,6 +27,7 @@ pub fn pre_exit() -> anyhow::Result<()> {
     Ok(())
 }
 
+// Some state handlers
 pub static ENTRIES: Mutex<Vec<DirEntry>> = Mutex::new(Vec::new());
 pub static LOADING: Mutex<bool> = Mutex::new(true);
 pub static CHANGED: Mutex<bool> = Mutex::new(false);
@@ -143,6 +144,12 @@ impl App {
 
     #[tracing::instrument]
     fn delete_entry(&mut self, index: usize) {
+        // This function calls 'entries.map' a lot.
+        // This ensures that the passed closure gets access to the mutex guard,
+        // While ensuring that said guard is dropped right after the closure.
+        // This prevents the previous issue where the mutex was locked for this entire function,
+        // Making the whole spawning of a thread, "[DELETING...]" status and updates pointless
+
         struct MutexMapper<'a, T>(&'a Mutex<T>);
 
         impl<'a, T> MutexMapper<'a, T> {
