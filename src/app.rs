@@ -151,7 +151,7 @@ impl App {
                 return;
             }
 
-            let mut entry = entries.get_mut(index).unwrap();
+            let entry = entries.get_mut(index).unwrap();
 
             entry.deleting = Some(false);
 
