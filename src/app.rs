@@ -42,8 +42,9 @@ pub enum Sorting {
 impl From<usize> for Sorting {
     fn from(value: usize) -> Self {
         match value {
+            0 => Sorting::Name,
             1 => Sorting::Size,
-            _ => Sorting::Name,
+            _ => unreachable!(),
         }
     }
 }
