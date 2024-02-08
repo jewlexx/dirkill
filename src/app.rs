@@ -151,21 +151,21 @@ impl App {
             };
 
             // This must be a separate line to ensure that entries is not borrowed twice
-            if entry.deleting == DeletionState::Deleted {
+            if entry.deletion_state == DeletionState::Deleted {
                 entries.remove(index);
                 return;
             }
 
-            entry.deleting = DeletionState::Deleting;
+            entry.deletion_state = DeletionState::Deleting;
 
             let p = entry.entry.path();
 
             match std::fs::remove_dir_all(p) {
                 Ok(_) => {
-                    entry.deleting = DeletionState::Deleted;
+                    entry.deletion_state = DeletionState::Deleted;
                 }
                 Err(_) => {
-                    entry.deleting = DeletionState::Error;
+                    entry.deletion_state = DeletionState::Error;
                 }
             };
         });
@@ -236,7 +236,7 @@ impl App {
                 .map(|dir| {
                     (
                         dir.entry.path().display().to_string(),
-                        (dir.size, dir.deleting),
+                        (dir.size, dir.deletion_state),
                     )
                 })
                 .collect::<Vec<_>>()

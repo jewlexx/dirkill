@@ -36,7 +36,7 @@ pub struct DirEntry {
     pub size: u64,
     pub entry: walkdir::DirEntry,
     /// None if the entry hasn't been touched. Some(true) if the entry has been deleted, and Some(false) if it is being deleted
-    pub deleting: DeletionState,
+    pub deletion_state: DeletionState,
 }
 
 impl From<walkdir::DirEntry> for DirEntry {
@@ -46,7 +46,7 @@ impl From<walkdir::DirEntry> for DirEntry {
         Self {
             size,
             entry,
-            deleting: DeletionState::default(),
+            deletion_state: DeletionState::default(),
         }
     }
 }
