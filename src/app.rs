@@ -156,7 +156,7 @@ impl App {
             /// Locks a mutex and allows a function to be called on said lock
             ///
             /// Is helpful when you need to lock a mutex, and have it unlock as soon as your statement is done
-            pub fn map<R>(&self, func: &dyn Fn(MutexGuard<T>) -> R) -> R {
+            pub fn map<R>(&self, func: impl Fn(MutexGuard<T>) -> R) -> R {
                 let guard = self.0.lock();
                 func(guard)
             }
@@ -165,7 +165,7 @@ impl App {
         std::thread::spawn(move || {
             let entries = MutexMapper(&ENTRIES);
 
-            if entries.map(&|mut guard| {
+            if entries.map(|mut guard| {
                 // This must be a separate line to ensure that entries is not borrowed twice
                 if guard.get_mut(index).unwrap().deletion_state == DeletionState::Deleted {
                     guard.remove(index);
@@ -178,7 +178,7 @@ impl App {
                 return;
             }
 
-            let entry_path = entries.map(&|mut guard| {
+            let entry_path = entries.map(|mut guard| {
                 let entry = guard.get_mut(index).unwrap();
                 entry.deletion_state = DeletionState::Deleting;
 
@@ -187,13 +187,13 @@ impl App {
 
             match std::fs::remove_dir_all(entry_path) {
                 Ok(_) => {
-                    entries.map(&|mut guard| {
+                    entries.map(|mut guard| {
                         let entry = guard.get_mut(index).unwrap();
                         entry.deletion_state = DeletionState::Deleted;
                     });
                 }
                 Err(_) => {
-                    entries.map(&|mut guard| {
+                    entries.map(|mut guard| {
                         let entry = guard.get_mut(index).unwrap();
                         entry.deletion_state = DeletionState::Deleted;
                     });
