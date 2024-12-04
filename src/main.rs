@@ -1,13 +1,11 @@
-use std::thread;
+use std::{ffi::OsString, thread};
 
 use clap::Parser;
 
 use app::App;
-use args::DirKillArgs;
 use ratatui::style::Color;
 
 mod app;
-mod args;
 mod color;
 mod files;
 
@@ -16,6 +14,30 @@ mod logs;
 
 #[macro_use]
 extern crate tracing;
+
+#[derive(Debug, Clone, Parser)]
+#[clap(name = "Dir Kill", version, author, about)]
+pub struct Args {
+    #[clap(
+        short,
+        long,
+        default_value = "node_modules",
+        help = "The directory to remove"
+    )]
+    pub target: OsString,
+
+    #[clap(short, long, default_value = ".", help = "The directory to search")]
+    pub dir: OsString,
+
+    #[clap(
+        long,
+        help = "The highlight color to use for the selected entry. Must be a hex value"
+    )]
+    pub color: Option<String>,
+
+    #[clap(short = 'l', long, help = "Whether or not to follow symlinks")]
+    pub follow_links: bool,
+}
 
 fn main() {
     // Do not bother initializing tracing if we are not in debug mode
@@ -27,12 +49,12 @@ fn main() {
     std::panic::set_hook(Box::new(|info| {
         app::pre_exit().unwrap();
 
-        println!("{}", info);
+        eprintln!("{info}");
     }));
 
     info!("Starting dirkill");
 
-    let args = DirKillArgs::parse();
+    let args = Args::parse();
 
     let qualified_dir = dunce::canonicalize(&args.dir).expect("Failed to canonicalize path");
 
