@@ -59,6 +59,8 @@ impl Args {
                         ENTRIES.lock().push(entry.into());
                         *CHANGED.lock() = true;
                     }
+                    assert!(!ENTRIES.is_locked());
+                    assert!(!CHANGED.is_locked());
                 }
                 None => break,
                 _ => {}
@@ -66,5 +68,6 @@ impl Args {
         }
 
         *crate::app::LOADING.lock() = false;
+        assert!(!crate::app::LOADING.is_locked());
     }
 }

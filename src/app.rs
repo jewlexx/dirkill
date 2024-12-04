@@ -186,6 +186,7 @@ impl App {
                     }
                     *CHANGED.lock() = true;
                 }
+                assert!(!CHANGED.is_locked());
             }
         }
 
@@ -212,6 +213,7 @@ impl App {
             }) {
                 return;
             }
+            assert!(!ENTRIES.is_locked());
 
             let entry_path = ENTRIES.map(|mut guard| {
                 let entry = guard.get_mut(index).unwrap();
@@ -219,6 +221,7 @@ impl App {
 
                 entry.entry.path().to_path_buf()
             });
+            assert!(!ENTRIES.is_locked());
 
             match std::fs::remove_dir_all(entry_path) {
                 Ok(()) => {
@@ -226,12 +229,14 @@ impl App {
                         let entry = guard.get_mut(index).unwrap();
                         entry.deletion_state = DeletionState::Deleted;
                     });
+                    assert!(!ENTRIES.is_locked());
                 }
                 Err(_) => {
                     ENTRIES.map(|mut guard| {
                         let entry = guard.get_mut(index).unwrap();
                         entry.deletion_state = DeletionState::Error;
                     });
+                    assert!(!ENTRIES.is_locked());
                 }
             };
         });
@@ -278,6 +283,7 @@ impl App {
         };
 
         let loading_text = if *LOADING.lock() { " [LOADING]" } else { "" };
+        assert!(!LOADING.is_locked());
 
         format!("{path_base}{loading_text}")
     }
@@ -316,6 +322,7 @@ impl App {
         let block = Block::default();
 
         let list_entries = {
+            // TODO: Sort on a separate thread
             let mut unsorted_entries = ENTRIES.lock();
 
             unsorted_entries.sort_unstable_by(|a, b| match self.sorting {
