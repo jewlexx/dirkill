@@ -1,3 +1,5 @@
+#![warn(clippy::all, clippy::pedantic, rust_2018_idioms)]
+
 use std::thread;
 
 use app::App;
@@ -19,9 +21,7 @@ extern crate tracing;
 fn main() {
     // Do not bother initializing tracing if we are not in debug mode
     #[cfg(debug_assertions)]
-    if logs::init_tracing().is_err() {
-        panic!("Failed to initialize tracing");
-    };
+    assert!(logs::init_tracing().is_ok(), "Failed to initialize tracing");
 
     std::panic::set_hook(Box::new(|info| {
         app::pre_exit().unwrap();

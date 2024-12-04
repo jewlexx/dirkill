@@ -50,8 +50,7 @@ impl Args {
                     let is_target = path
                         .components()
                         .last()
-                        .map(|x| x.as_os_str() == target_dir)
-                        .unwrap_or(false);
+                        .is_some_and(|x| x.as_os_str() == target_dir);
 
                     if is_target && entry.file_type().is_dir() {
                         // Do not continue searching the directory, as it is the target directory

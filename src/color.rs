@@ -1,10 +1,10 @@
-use std::{num::ParseIntError, str::Chars};
+use std::num::ParseIntError;
 
 use ratatui::style::Color;
 use thiserror::Error as AsError;
 
 #[derive(Debug, AsError, PartialEq, Eq)]
-pub enum ColorError {
+pub enum Error {
     #[error("Invalid hex provided")]
     InvalidHex,
     #[error("Hex value includes alpha channel")]
@@ -12,24 +12,28 @@ pub enum ColorError {
     #[error("Hex value must be 3 or 6 characters")]
     InvalidHexLength,
     #[error("Failed to parse hex value")]
-    ParseError(#[from] ParseIntError),
+    ParseInt(#[from] ParseIntError),
 }
 
-fn validate_chars(mut chars: Chars) -> Result<(), ColorError> {
+pub type Result<T, E = Error> = std::result::Result<T, E>;
+
+fn validate_chars(string: impl AsRef<str>) -> Result<(), Error> {
+    let mut chars = string.as_ref().chars();
+
     if chars.all(|c| c.is_ascii_hexdigit()) {
         Ok(())
     } else {
-        Err(ColorError::InvalidHex)
+        Err(Error::InvalidHex)
     }
 }
 
-fn validate_hex_len(len: usize) -> Result<(), ColorError> {
+fn validate_hex_len(len: usize) -> Result<(), Error> {
     if len == 4 || len == 8 {
-        return Err(ColorError::IncludesAlpha);
+        return Err(Error::IncludesAlpha);
     }
 
     if len != 3 && len != 6 {
-        return Err(ColorError::InvalidHexLength);
+        return Err(Error::InvalidHexLength);
     }
 
     Ok(())
@@ -48,16 +52,12 @@ fn hex_3_to_6(hex_trois: &str) -> String {
     hex
 }
 
-pub fn parse_hex(raw_hex: impl AsRef<str>) -> Result<Color, ColorError> {
+pub fn parse_hex(raw_hex: impl AsRef<str>) -> Result<Color, Error> {
     let raw_hex = raw_hex.as_ref();
 
-    let hex_value = if raw_hex.starts_with('#') {
-        raw_hex.trim_start_matches('#')
-    } else {
-        raw_hex
-    };
+    let hex_value = raw_hex.trim_start_matches('#');
 
-    validate_chars(hex_value.chars())?;
+    validate_chars(hex_value)?;
 
     let hex_value_len = hex_value.len();
 
@@ -69,11 +69,12 @@ pub fn parse_hex(raw_hex: impl AsRef<str>) -> Result<Color, ColorError> {
         hex_value.to_string()
     };
 
-    let hex_usize = usize::from_str_radix(&hex_valid, 16)?;
+    let hex_u32 = u32::from_str_radix(&hex_valid, 16)?;
 
-    let r = (hex_usize >> 16) as u8;
-    let g = ((hex_usize >> 8) & 0x00FF) as u8;
-    let b = (hex_usize & 0x0000_00FF) as u8;
+    #[allow(clippy::cast_possible_truncation)]
+    let r = (hex_u32 >> 16) as u8;
+    let g = ((hex_u32 >> 8) & 0x00FF) as u8;
+    let b = (hex_u32 & 0x0000_00FF) as u8;
 
     // TMP
     Ok(Color::Rgb(r, g, b))
@@ -81,6 +82,8 @@ pub fn parse_hex(raw_hex: impl AsRef<str>) -> Result<Color, ColorError> {
 
 #[cfg(test)]
 mod tests {
+    use rstest::*;
+
     use super::*;
 
     #[test]
@@ -88,5 +91,12 @@ mod tests {
         assert_eq!(parse_hex("#fff"), Ok(Color::Rgb(255, 255, 255)));
         assert_eq!(parse_hex("#000"), Ok(Color::Rgb(0, 0, 0)));
         assert_eq!(parse_hex("#c19c00"), Ok(Color::Rgb(193, 156, 0)));
+    }
+
+    #[rstest]
+    #[case("fff", "fff")]
+    #[case("#fff", "fff")]
+    fn test_trim_start_matches(#[case] raw_hex: &str, #[case] expected: &str) {
+        assert_eq!(raw_hex.trim_start_matches('#'), expected);
     }
 }

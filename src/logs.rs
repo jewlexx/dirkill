@@ -9,15 +9,15 @@ use tracing_subscriber::fmt::format::FmtSpan;
 fn get_log_path() -> std::io::Result<PathBuf> {
     let base_path = std::env::current_dir()?.join("logs");
 
-    if !base_path.exists() {
-        std::fs::create_dir(&base_path)?;
-    } else {
+    if base_path.exists() {
         let read = std::fs::read_dir(&base_path)?;
 
         if read.count() > 10 {
             std::fs::remove_dir_all(&base_path)?;
             std::fs::create_dir(&base_path)?;
         }
+    } else {
+        std::fs::create_dir(&base_path)?;
     }
 
     Ok(base_path)
