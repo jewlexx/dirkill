@@ -6,7 +6,7 @@ use crossterm::{
     style::Stylize,
     terminal::{enable_raw_mode, EnterAlternateScreen},
 };
-use parking_lot::{Mutex, MutexGuard};
+use parking_lot::Mutex;
 use ratatui::{
     backend::CrosstermBackend,
     layout::{Alignment, Constraint, Layout},
@@ -16,7 +16,10 @@ use ratatui::{
     Frame, Terminal,
 };
 
-use crate::files::{DeletionState, DirEntry};
+use crate::{
+    files::{DeletionState, DirEntry},
+    locks::LockMap,
+};
 
 pub fn pre_exit() -> anyhow::Result<()> {
     use crossterm::terminal::{disable_raw_mode, LeaveAlternateScreen};
@@ -118,7 +121,7 @@ impl App {
                         KeyCode::Down => self.next(),
                         KeyCode::Up => self.previous(),
                         KeyCode::Tab | KeyCode::BackTab => {
-                            self.sorting_inverted = !self.sorting_inverted
+                            self.sorting_inverted = !self.sorting_inverted;
                         }
                         KeyCode::Right => {
                             let old: usize = self.sorting.into();
@@ -145,28 +148,8 @@ impl App {
 
     #[tracing::instrument]
     fn delete_entry(&mut self, index: usize) {
-        // This function calls 'entries.map' a lot.
-        // This ensures that the passed closure gets access to the mutex guard,
-        // While ensuring that said guard is dropped right after the closure.
-        // This prevents the previous issue where the mutex was locked for this entire function,
-        // Making the whole spawning of a thread, "[DELETING...]" status and updates pointless
-
-        struct MutexMapper<'a, T>(&'a Mutex<T>);
-
-        impl<'a, T> MutexMapper<'a, T> {
-            /// Locks a mutex and allows a function to be called on said lock
-            ///
-            /// Is helpful when you need to lock a mutex, and have it unlock as soon as your statement is done
-            pub fn map<R>(&self, func: impl Fn(MutexGuard<T>) -> R) -> R {
-                let guard = self.0.lock();
-                func(guard)
-            }
-        }
-
         std::thread::spawn(move || {
-            let entries = MutexMapper(&ENTRIES);
-
-            if entries.map(|mut guard| {
+            if ENTRIES.map(|mut guard| {
                 // This must be a separate line to ensure that entries is not borrowed twice
                 if guard.get_mut(index).unwrap().deletion_state == DeletionState::Deleted {
                     guard.remove(index);
@@ -179,7 +162,7 @@ impl App {
                 return;
             }
 
-            let entry_path = entries.map(|mut guard| {
+            let entry_path = ENTRIES.map(|mut guard| {
                 let entry = guard.get_mut(index).unwrap();
                 entry.deletion_state = DeletionState::Deleting;
 
@@ -187,14 +170,14 @@ impl App {
             });
 
             match std::fs::remove_dir_all(entry_path) {
-                Ok(_) => {
-                    entries.map(|mut guard| {
+                Ok(()) => {
+                    ENTRIES.map(|mut guard| {
                         let entry = guard.get_mut(index).unwrap();
                         entry.deletion_state = DeletionState::Deleted;
                     });
                 }
                 Err(_) => {
-                    entries.map(|mut guard| {
+                    ENTRIES.map(|mut guard| {
                         let entry = guard.get_mut(index).unwrap();
                         entry.deletion_state = DeletionState::Error;
                     });

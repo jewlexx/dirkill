@@ -12,6 +12,7 @@ mod args;
 mod color;
 mod files;
 
+mod locks;
 #[cfg(debug_assertions)]
 mod logs;
 
