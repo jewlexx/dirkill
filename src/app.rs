@@ -186,18 +186,7 @@ impl App {
         });
     }
 
-    fn ui(&mut self, frame: &mut Frame) {
-        self.state.select(Some(self.index));
-
-        let chunks = Layout::default()
-            .constraints([
-                Constraint::Percentage(5),
-                Constraint::Percentage(5),
-                Constraint::Percentage(90),
-            ])
-            .margin(5)
-            .split(frame.size());
-
+    fn title(&self) -> Paragraph<'_> {
         let title = Span::styled(
             "DirKill",
             Style::default()
@@ -217,6 +206,23 @@ impl App {
             me,
         ]))
         .alignment(Alignment::Center);
+
+        title
+    }
+
+    fn ui(&mut self, frame: &mut Frame<'_>) {
+        self.state.select(Some(self.index));
+
+        let chunks = Layout::default()
+            .constraints([
+                Constraint::Percentage(5),
+                Constraint::Percentage(5),
+                Constraint::Percentage(90),
+            ])
+            .margin(5)
+            .split(frame.area());
+
+        let title = self.title();
 
         frame.render_widget(title, chunks[0]);
 
@@ -261,16 +267,19 @@ impl App {
             .iter()
             .map(|entry| {
                 Row::new([entry.0.clone(), {
-                    let mut size = bytesize::ByteSize(entry.1 .0).to_string();
-
                     match entry.1 .1 {
-                        DeletionState::Deleted => size = "[DELETED]".to_owned(),
-                        DeletionState::Deleting => size.push_str(" [DELETING...]"),
-                        DeletionState::Error => size = "[ERROR DELETING]".red().to_string(),
-                        _ => {}
-                    }
+                        DeletionState::Deleted => "[DELETED]".to_string(),
+                        DeletionState::Error => "[ERROR DELETING]".red().to_string(),
+                        state => {
+                            let mut size = bytesize::ByteSize(entry.1 .0).to_string();
 
-                    size
+                            if matches!(state, DeletionState::Deleting) {
+                                size.push_str(" [DELETING...]");
+                            }
+
+                            size
+                        }
+                    }
                 }])
             })
             .collect::<Vec<_>>();
@@ -309,7 +318,7 @@ impl App {
             .style(Style::default().add_modifier(Modifier::BOLD)),
         )
         .block(block)
-        .highlight_style(
+        .row_highlight_style(
             Style::default()
                 .bg(self.highlight_color)
                 .add_modifier(Modifier::BOLD),
