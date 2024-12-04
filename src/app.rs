@@ -181,7 +181,7 @@ impl App {
 
                             self.sorting = if old == 0 { 2 } else { old - 1 }.into();
                         }
-                        KeyCode::Enter => self.delete_entry(self.index),
+                        KeyCode::Char(' ') => self.delete_entry(self.index),
                         _ => {}
                     }
                     *CHANGED.lock() = true;
@@ -197,10 +197,13 @@ impl App {
     #[tracing::instrument]
     fn delete_entry(&mut self, index: usize) {
         std::thread::spawn(move || {
-            if ENTRIES.map(|mut guard| {
+            if ENTRIES.map(|mut entries| {
                 // This must be a separate line to ensure that entries is not borrowed twice
-                if guard.get_mut(index).unwrap().deletion_state == DeletionState::Deleted {
-                    guard.remove(index);
+                if entries
+                    .get_mut(index)
+                    .is_some_and(|entry| entry.deletion_state == DeletionState::Deleted)
+                {
+                    entries.remove(index);
 
                     true
                 } else {
@@ -258,7 +261,7 @@ impl App {
 
     fn controls<'a>() -> Paragraph<'a> {
         let controls = Span::styled(
-            "Controls: <Left/Right> - Sort, <Tab> - Invert Sort, <Up/Down> - Navigate, <Enter> - Delete, <q> - Quit",
+            "Controls: <Left/Right> - Sort, <Tab> - Invert Sort, <Up/Down> - Navigate, <Space> - Delete, <q> - Quit",
             Style::default()
                 .fg(Color::White)
                 .add_modifier(Modifier::BOLD),
