@@ -61,6 +61,42 @@ impl From<Sorting> for usize {
     }
 }
 
+struct Entry {
+    path: String,
+    size: u64,
+    state: DeletionState,
+}
+
+impl<'a> From<&'a DirEntry> for Entry {
+    fn from(entry: &'a DirEntry) -> Self {
+        Self {
+            path: entry.entry.path().display().to_string(),
+            size: entry.size,
+            state: entry.deletion_state,
+        }
+    }
+}
+
+impl Entry {
+    fn to_row(&self) -> Row<'_> {
+        Row::new([self.path.clone(), {
+            match self.state {
+                DeletionState::Deleted => "[DELETED]".to_string(),
+                DeletionState::Error => "[ERROR DELETING]".red().to_string(),
+                state => {
+                    let mut size = bytesize::ByteSize(self.size).to_string();
+
+                    if matches!(state, DeletionState::Deleting) {
+                        size.push_str(" [DELETING...]");
+                    }
+
+                    size
+                }
+            }
+        }])
+    }
+}
+
 #[derive(Debug)]
 pub struct App {
     index: usize,
@@ -71,6 +107,18 @@ pub struct App {
 }
 
 impl App {
+    const TABLE_CONSTRAINTS: &[Constraint] = &[
+        Constraint::Percentage(50),
+        Constraint::Length(30),
+        Constraint::Min(10),
+    ];
+
+    const LAYOUT_CONSTRAINTS: &[Constraint] = &[
+        Constraint::Percentage(5),
+        Constraint::Percentage(5),
+        Constraint::Percentage(90),
+    ];
+
     pub fn new(highlight_color: Color) -> Self {
         Self {
             index: 0,
@@ -198,131 +246,102 @@ impl App {
 
         let love = Span::styled("♥", Style::default().fg(Color::Red));
 
-        let title = Paragraph::new(Line::from(vec![
+        Paragraph::new(Line::from(vec![
             title,
             Span::from(" was made with "),
             love,
             Span::from(" by "),
             me,
         ]))
-        .alignment(Alignment::Center);
-
-        title
+        .alignment(Alignment::Center)
     }
 
-    fn ui(&mut self, frame: &mut Frame<'_>) {
-        self.state.select(Some(self.index));
-
-        let chunks = Layout::default()
-            .constraints([
-                Constraint::Percentage(5),
-                Constraint::Percentage(5),
-                Constraint::Percentage(90),
-            ])
-            .margin(5)
-            .split(frame.area());
-
-        let title = self.title();
-
-        frame.render_widget(title, chunks[0]);
-
-        let s = Span::styled(
+    fn controls<'a>() -> Paragraph<'a> {
+        let controls = Span::styled(
             "Controls: <Left/Right> - Sort, <Tab> - Invert Sort, <Up/Down> - Navigate, <Enter> - Delete, <q> - Quit",
             Style::default()
                 .fg(Color::White)
                 .add_modifier(Modifier::BOLD),
         );
 
-        let controls = Paragraph::new(s).alignment(Alignment::Center);
+        Paragraph::new(controls).alignment(Alignment::Center)
+    }
 
-        frame.render_widget(controls, chunks[1]);
+    fn path_header(&self) -> String {
+        let path_base = if self.sorting == Sorting::Name {
+            "> Path"
+        } else {
+            "Path"
+        };
+
+        let loading_text = if *LOADING.lock() { " [LOADING]" } else { "" };
+
+        format!("{path_base}{loading_text}")
+    }
+
+    fn size_header(&self) -> &'static str {
+        if self.sorting == Sorting::Size {
+            "> Size"
+        } else {
+            "Size"
+        }
+    }
+
+    fn table_headers<'r>(&self) -> Row<'r> {
+        Row::new([self.path_header(), self.size_header().to_owned()])
+            .style(Style::default().add_modifier(Modifier::BOLD))
+    }
+
+    fn row_highlight(&self) -> Style {
+        Style::default()
+            .bg(self.highlight_color)
+            .add_modifier(Modifier::BOLD)
+    }
+
+    fn ui(&mut self, frame: &mut Frame<'_>) {
+        self.state.select(Some(self.index));
+
+        let chunks = Layout::default()
+            .constraints(Self::LAYOUT_CONSTRAINTS)
+            .margin(5)
+            .split(frame.area());
+
+        frame.render_widget(self.title(), chunks[0]);
+
+        frame.render_widget(Self::controls(), chunks[1]);
 
         let block = Block::default();
 
         let list_entries = {
             let mut unsorted_entries = ENTRIES.lock();
 
-            unsorted_entries.sort_unstable_by(|old, entry| match self.sorting {
-                Sorting::Name => old.entry.path().cmp(entry.entry.path()),
-                // For some reason size sorting is inverted so we have to invert it back :)
-                Sorting::Size => entry.size.cmp(&old.size),
+            unsorted_entries.sort_unstable_by(|a, b| match self.sorting {
+                Sorting::Name => a.entry.path().cmp(b.entry.path()),
+                // Sorting is inverse here, because we want the larger size to be first
+                Sorting::Size => b.size.cmp(&a.size),
             });
 
             if self.sorting_inverted {
                 unsorted_entries.reverse();
             }
 
-            unsorted_entries
-                .iter()
-                .map(|dir| {
-                    (
-                        dir.entry.path().display().to_string(),
-                        (dir.size, dir.deletion_state),
-                    )
-                })
-                .collect::<Vec<_>>()
+            // Lock dropped here
+            unsorted_entries.iter().map(Entry::from).collect::<Vec<_>>()
         };
+
+        // Check that the lock was dropped at the end of the above scope
+        assert!(!ENTRIES.is_locked());
 
         let list_rows = list_entries
             .iter()
-            .map(|entry| {
-                Row::new([entry.0.clone(), {
-                    match entry.1 .1 {
-                        DeletionState::Deleted => "[DELETED]".to_string(),
-                        DeletionState::Error => "[ERROR DELETING]".red().to_string(),
-                        state => {
-                            let mut size = bytesize::ByteSize(entry.1 .0).to_string();
-
-                            if matches!(state, DeletionState::Deleting) {
-                                size.push_str(" [DELETING...]");
-                            }
-
-                            size
-                        }
-                    }
-                }])
-            })
+            .map(|entry| entry.to_row())
             .collect::<Vec<_>>();
 
-        let table = Table::new(
-            list_rows,
-            &[
-                Constraint::Percentage(50),
-                Constraint::Length(30),
-                Constraint::Min(10),
-            ],
-        )
-        .style(Style::default().bg(Color::Black))
-        .header(
-            Row::new([
-                {
-                    let path_base = if self.sorting == Sorting::Name {
-                        "> Path"
-                    } else {
-                        "Path"
-                    };
-
-                    format!(
-                        "{}{}",
-                        path_base,
-                        if *LOADING.lock() { " [LOADING]" } else { "" }
-                    )
-                },
-                if self.sorting == Sorting::Size {
-                    "> Size"
-                } else {
-                    "Size"
-                }
-                .to_owned(),
-            ])
-            .style(Style::default().add_modifier(Modifier::BOLD)),
-        )
-        .block(block)
-        .row_highlight_style(
-            Style::default()
-                .bg(self.highlight_color)
-                .add_modifier(Modifier::BOLD),
-        );
+        let table = Table::new(list_rows, Self::TABLE_CONSTRAINTS)
+            .style(Style::default().bg(Color::Black))
+            .header(self.table_headers())
+            .block(block)
+            .row_highlight_style(self.row_highlight());
 
         frame.render_stateful_widget(table, chunks[2], &mut self.state);
     }
