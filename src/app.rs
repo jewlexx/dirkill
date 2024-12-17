@@ -7,7 +7,7 @@ use std::{
 
 use crossbeam_channel::Receiver;
 use crossterm::{
-    event::{self, Event, KeyCode},
+    event::{self, Event, KeyCode, KeyEventKind},
     execute,
     style::Stylize,
     terminal::{enable_raw_mode, EnterAlternateScreen},
@@ -174,20 +174,24 @@ impl App {
 
                 if event::poll(Duration::ZERO)? {
                     if let Event::Key(key) = event::read()? {
-                        match key.code {
-                            KeyCode::Char('q') => break,
-                            KeyCode::Down => self.next(),
-                            KeyCode::Up => self.previous(),
-                            KeyCode::Tab | KeyCode::BackTab => self.sorting_state.lock().invert(),
-                            KeyCode::Right | KeyCode::Left => {
-                                self.sorting_state.lock().switch_column();
+                        if key.kind == KeyEventKind::Press {
+                            match key.code {
+                                KeyCode::Char('q') => break,
+                                KeyCode::Down => self.next(),
+                                KeyCode::Up => self.previous(),
+                                KeyCode::Tab | KeyCode::BackTab => {
+                                    self.sorting_state.lock().invert()
+                                }
+                                KeyCode::Right | KeyCode::Left => {
+                                    self.sorting_state.lock().switch_column();
+                                }
+                                KeyCode::Char(' ') => self.delete_entry(self.index),
+                                code => {
+                                    debug!("{}", code);
+                                }
                             }
-                            KeyCode::Char(' ') => self.delete_entry(self.index),
-                            code => {
-                                debug!("{}", code);
-                            }
+                            *CHANGED.lock() = true;
                         }
-                        *CHANGED.lock() = true;
                     }
                     assert!(!CHANGED.is_locked());
                 }
