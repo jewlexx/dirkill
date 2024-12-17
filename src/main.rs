@@ -21,6 +21,8 @@ mod sorting;
 #[macro_use]
 extern crate tracing;
 
+pub type UpdateChannel = Option<DirEntry>;
+
 #[tokio::main]
 async fn main() {
     // Do not bother initializing tracing if we are not in debug mode
@@ -42,7 +44,7 @@ async fn main() {
         _ => Color::Yellow,
     };
 
-    let (tx, rx) = crossbeam_channel::unbounded::<DirEntry>();
+    let (tx, rx) = crossbeam_channel::unbounded::<UpdateChannel>();
 
     let app = App::new(color, rx);
 

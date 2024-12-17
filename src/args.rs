@@ -3,7 +3,7 @@ use std::path::{Path, PathBuf};
 use clap::Parser;
 use crossbeam_channel::Sender;
 
-use crate::files::DirEntry;
+use crate::{files::DirEntry, UpdateChannel};
 
 #[derive(Debug, Clone, Parser)]
 #[clap(name = "Dir Kill", version, author, about)]
@@ -33,7 +33,7 @@ impl Args {
     pub fn get_files(
         &self,
         search_dir: impl AsRef<Path> + core::fmt::Debug,
-        tx: &Sender<DirEntry>,
+        tx: &Sender<UpdateChannel>,
     ) {
         let search_dir = search_dir.as_ref();
         let target_dir = &self.target;
@@ -59,7 +59,7 @@ impl Args {
                     if is_target && entry.file_type().is_dir() {
                         // Do not continue searching the directory, as it is the target directory
                         iter.skip_current_dir();
-                        tx.send(entry.into()).unwrap();
+                        tx.send(Some(entry.into())).unwrap();
                     }
                     // assert!(!ENTRIES.is_locked());
                     // assert!(!CHANGED.is_locked());

@@ -26,6 +26,7 @@ use crate::{
     files::{DeletionState, DirEntry},
     locks::LockMap,
     sorting::{Column, Sorting},
+    UpdateChannel,
 };
 
 pub fn pre_exit() -> anyhow::Result<()> {
@@ -104,7 +105,7 @@ pub struct App {
     index: usize,
     state: TableState,
     highlight_color: Color,
-    rx: Receiver<DirEntry>,
+    rx: Receiver<UpdateChannel>,
     sorting_state: Arc<Mutex<Sorting>>,
 }
 
@@ -121,7 +122,7 @@ impl App {
         Constraint::Percentage(90),
     ];
 
-    pub fn new(highlight_color: Color, rx: Receiver<DirEntry>) -> Self {
+    pub fn new(highlight_color: Color, rx: Receiver<UpdateChannel>) -> Self {
         Self {
             index: 0,
             state: TableState::default(),
@@ -322,7 +323,9 @@ impl App {
         thread::spawn(move || loop {
             if let Ok(entry) = rx.recv() {
                 let mut sorting_state = sorting_state.lock();
-                sorting_state.add_entry(&entry);
+                if let Some(entry) = entry {
+                    sorting_state.add_entry(&entry);
+                }
                 sorting_state.sort();
             } else {
                 return;
