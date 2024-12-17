@@ -1,0 +1,56 @@
+name: Release
+
+on:
+  release:
+    types: [published]
+
+jobs:
+  release:
+    name: Release
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        include:
+          - os: ubuntu-latest
+            target: x86_64-unknown-linux-gnu
+            archive: tar.gz
+          - os: macos-latest
+            target: x86_64-apple-darwin
+            archive: zip
+          - os: windows-latest
+            target: x86_64-pc-windows-msvc
+            archive: zip
+    steps:
+      - name: Checkout sources
+        uses: actions/checkout@v3
+
+      - name: Install stable toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: stable
+          override: true
+
+      - name: Build
+        uses: actions-rs/cargo@v1
+        with:
+          command: build
+          args: --release --target ${{ matrix.target }}
+
+      - name: Packaging
+        shell: bash
+        run: |
+          cd target/${{ matrix.target }}/release
+          strip dirkill
+          tar czvf dirkill-${{ matrix.target }}.tar.gz dirkill
+          if [ "${{ matrix.os }}" = "windows-latest" ]; then
+              7z a dirkill-${{ matrix.target }}.zip dirkill.exe
+          fi
+
+      - name: Upload binaries to release
+        uses: svenstaro/upload-release-action@v2
+        with:
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          file: target/${{ matrix.target }}/release/dirkill-${{ matrix.target }}.${{ matrix.archive }}
+          asset_name: dirkill-${{ matrix.target }}.${{ matrix.archive }}
+          tag: ${{ github.ref }}
