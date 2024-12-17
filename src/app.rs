@@ -223,21 +223,18 @@ impl App {
             });
             assert!(!ENTRIES.is_locked());
 
-            match std::fs::remove_dir_all(entry_path) {
-                Ok(()) => {
-                    ENTRIES.map(|mut guard| {
-                        let entry = guard.get_mut(index).unwrap();
-                        entry.deletion_state = DeletionState::Deleted;
-                    });
-                    assert!(!ENTRIES.is_locked());
-                }
-                Err(_) => {
-                    ENTRIES.map(|mut guard| {
-                        let entry = guard.get_mut(index).unwrap();
-                        entry.deletion_state = DeletionState::Error;
-                    });
-                    assert!(!ENTRIES.is_locked());
-                }
+            if let Ok(()) = std::fs::remove_dir_all(entry_path) {
+                ENTRIES.map(|mut guard| {
+                    let entry = guard.get_mut(index).unwrap();
+                    entry.deletion_state = DeletionState::Deleted;
+                });
+                assert!(!ENTRIES.is_locked());
+            } else {
+                ENTRIES.map(|mut guard| {
+                    let entry = guard.get_mut(index).unwrap();
+                    entry.deletion_state = DeletionState::Error;
+                });
+                assert!(!ENTRIES.is_locked());
             };
         });
     }

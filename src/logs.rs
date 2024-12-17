@@ -28,7 +28,8 @@ static TRACING_GUARD: Mutex<Option<WorkerGuard>> = Mutex::new(None);
 pub fn init_tracing() -> anyhow::Result<()> {
     let mut path = get_log_path()?;
     let file_name = chrono::Local::now()
-        .format("dir-kill.%Y-%m-%d_%H-%M-%S.log")
+        // dir-kill.%Y-%m-%d_%H-%M-%S.log
+        .format("dir-kill.log")
         .to_string();
 
     path.push(file_name);

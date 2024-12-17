@@ -29,7 +29,6 @@ pub struct Args {
 }
 
 impl Args {
-    #[tracing::instrument]
     pub fn get_files(&self, search_dir: impl AsRef<Path> + core::fmt::Debug) {
         let search_dir = search_dir.as_ref();
         let target_dir = &self.target;
@@ -45,7 +44,7 @@ impl Args {
         loop {
             match iter.next() {
                 Some(Ok(entry)) => {
-                    debug!("Found entry {}", entry.path().display());
+                    // debug!("Found entry {}", entry.path().display());
                     let path = entry.path();
                     let is_target = path
                         .components()
@@ -55,16 +54,23 @@ impl Args {
                     if is_target && entry.file_type().is_dir() {
                         // Do not continue searching the directory, as it is the target directory
                         iter.skip_current_dir();
-                        debug!("Found dir {}", path.display());
-                        ENTRIES.lock().push(entry.into());
+                        // debug!("Found dir {}", path.display());
+                        let mut entries_lock = ENTRIES.lock();
+                        entries_lock.push(entry.into());
+                        drop(entries_lock);
                         *CHANGED.lock() = true;
                     }
-                    assert!(!ENTRIES.is_locked());
-                    assert!(!CHANGED.is_locked());
                 }
                 None => break,
                 _ => {}
             }
+
+            // if ENTRIES.is_locked() {
+            //     trace!("Entries lock is locked");
+            // }
+            // if CHANGED.is_locked() {
+            //     trace!("Changed lock is locked");
+            // }
         }
 
         *crate::app::LOADING.lock() = false;
