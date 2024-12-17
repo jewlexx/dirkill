@@ -2,9 +2,8 @@ use std::path::{Path, PathBuf};
 
 use clap::Parser;
 use crossbeam_channel::Sender;
-use parking_lot::MutexGuard;
 
-use crate::app::ENTRIES;
+use crate::files::DirEntry;
 
 #[derive(Debug, Clone, Parser)]
 #[clap(name = "Dir Kill", version, author, about)]
@@ -31,7 +30,11 @@ pub struct Args {
 }
 
 impl Args {
-    pub fn get_files(&self, search_dir: impl AsRef<Path> + core::fmt::Debug, tx: &Sender<()>) {
+    pub fn get_files(
+        &self,
+        search_dir: impl AsRef<Path> + core::fmt::Debug,
+        tx: &Sender<DirEntry>,
+    ) {
         let search_dir = search_dir.as_ref();
         let target_dir = &self.target;
 
@@ -56,11 +59,7 @@ impl Args {
                     if is_target && entry.file_type().is_dir() {
                         // Do not continue searching the directory, as it is the target directory
                         iter.skip_current_dir();
-                        // debug!("Found dir {}", path.display());
-                        let mut entries_lock = ENTRIES.lock();
-                        entries_lock.push(entry.into());
-                        MutexGuard::unlock_fair(entries_lock);
-                        tx.send(()).unwrap();
+                        tx.send(entry.into()).unwrap();
                     }
                     // assert!(!ENTRIES.is_locked());
                     // assert!(!CHANGED.is_locked());

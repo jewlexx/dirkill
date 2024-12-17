@@ -1,4 +1,7 @@
-use crate::app::{Entry, CHANGED, ENTRIES};
+use crate::{
+    app::{Entry, CHANGED},
+    files::DirEntry,
+};
 
 #[derive(Debug, Default, Clone)]
 pub struct Sorting {
@@ -31,25 +34,33 @@ impl Sorting {
         });
     }
 
-    pub fn sort(&mut self) {
-        let mut unsorted_entries = ENTRIES.lock();
+    pub fn add_entry(&mut self, new_entry: &DirEntry) {
+        self.sorted.push(Entry::from(new_entry));
+    }
 
-        unsorted_entries.sort_unstable_by(|a, b| match self.column() {
-            Column::Name => a.entry.path().cmp(b.entry.path()),
-            // Sorting is inverse here, because we want the larger size to be first
-            Column::Size => b.size.cmp(&a.size),
+    pub fn sort(&mut self) {
+        let column = self.column();
+        self.sorted.sort_unstable_by(|a, b| {
+            match column {
+                Column::Name => a.original.entry.path().cmp(b.original.entry.path()),
+                // Sorting is inverse here, because we want the larger size to be first
+                Column::Size => b.size.cmp(&a.size),
+            }
         });
 
         if self.inverted() {
-            unsorted_entries.reverse();
+            self.sorted.reverse();
         }
 
-        self.sorted = unsorted_entries.iter().map(Entry::from).collect();
         *CHANGED.lock() = true;
     }
 
     pub fn sorted(&self) -> &[Entry] {
         &self.sorted
+    }
+
+    pub fn sorted_mut(&mut self) -> &mut Vec<Entry> {
+        &mut self.sorted
     }
 }
 

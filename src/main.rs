@@ -5,6 +5,7 @@ use std::thread;
 use app::App;
 use args::Args;
 use clap::Parser;
+use files::DirEntry;
 use ratatui::style::Color;
 
 mod app;
@@ -41,7 +42,7 @@ async fn main() {
         _ => Color::Yellow,
     };
 
-    let (tx, rx) = crossbeam_channel::unbounded::<()>();
+    let (tx, rx) = crossbeam_channel::unbounded::<DirEntry>();
 
     let app = App::new(color, rx);
 

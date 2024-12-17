@@ -38,7 +38,6 @@ pub fn pre_exit() -> anyhow::Result<()> {
 }
 
 // Some state handlers
-pub static ENTRIES: Mutex<Vec<DirEntry>> = Mutex::new(Vec::new());
 pub static LOADING: Mutex<bool> = Mutex::new(true);
 pub static CHANGED: Mutex<bool> = Mutex::new(false);
 
@@ -63,9 +62,10 @@ impl From<Column> for usize {
 
 #[derive(Debug, Clone)]
 pub struct Entry {
-    path: String,
-    size: u64,
-    state: DeletionState,
+    pub path: String,
+    pub size: u64,
+    pub state: DeletionState,
+    pub original: DirEntry,
 }
 
 impl<'a> From<&'a DirEntry> for Entry {
@@ -74,6 +74,7 @@ impl<'a> From<&'a DirEntry> for Entry {
             path: entry.entry.path().display().to_string(),
             size: entry.size,
             state: entry.deletion_state,
+            original: entry.clone(),
         }
     }
 }
@@ -103,7 +104,7 @@ pub struct App {
     index: usize,
     state: TableState,
     highlight_color: Color,
-    rx: Receiver<()>,
+    rx: Receiver<DirEntry>,
     sorting_state: Arc<Mutex<Sorting>>,
 }
 
@@ -120,7 +121,7 @@ impl App {
         Constraint::Percentage(90),
     ];
 
-    pub fn new(highlight_color: Color, rx: Receiver<()>) -> Self {
+    pub fn new(highlight_color: Color, rx: Receiver<DirEntry>) -> Self {
         Self {
             index: 0,
             state: TableState::default(),
@@ -132,8 +133,7 @@ impl App {
 
     #[tracing::instrument(skip(self))]
     pub fn next(&mut self) {
-        let entries_len = ENTRIES.lock().len();
-        assert!(!ENTRIES.is_locked());
+        let entries_len = self.sorting_state.lock().sorted().len();
 
         if self.index < entries_len - 1 {
             self.index += 1;
@@ -144,8 +144,7 @@ impl App {
 
     #[tracing::instrument(skip(self))]
     pub fn previous(&mut self) {
-        let entries_len = ENTRIES.lock().len();
-        assert!(!ENTRIES.is_locked());
+        let entries_len = self.sorting_state.lock().sorted().len();
 
         if self.index > 0 {
             self.index = self.index.wrapping_sub(1);
@@ -207,12 +206,14 @@ impl App {
 
     #[tracing::instrument]
     fn delete_entry(&mut self, index: usize) {
+        let sorting_state = self.sorting_state.clone();
         std::thread::spawn(move || {
-            if ENTRIES.map(|mut entries| {
+            if sorting_state.map(|mut state| {
                 // This must be a separate line to ensure that entries is not borrowed twice
+                let entries = state.sorted_mut();
                 if entries
                     .get_mut(index)
-                    .is_some_and(|entry| entry.deletion_state == DeletionState::Deleted)
+                    .is_some_and(|entry| entry.state == DeletionState::Deleted)
                 {
                     entries.remove(index);
 
@@ -223,28 +224,24 @@ impl App {
             }) {
                 return;
             }
-            assert!(!ENTRIES.is_locked());
 
-            let entry_path = ENTRIES.map(|mut guard| {
-                let entry = guard.get_mut(index).unwrap();
-                entry.deletion_state = DeletionState::Deleting;
+            let entry_path = sorting_state.map(|mut guard| {
+                let entry = guard.sorted_mut().get_mut(index).unwrap();
+                entry.state = DeletionState::Deleting;
 
-                entry.entry.path().to_path_buf()
+                entry.original.entry.path().to_path_buf()
             });
-            assert!(!ENTRIES.is_locked());
 
             if let Ok(()) = std::fs::remove_dir_all(entry_path) {
-                ENTRIES.map(|mut guard| {
-                    let entry = guard.get_mut(index).unwrap();
-                    entry.deletion_state = DeletionState::Deleted;
+                sorting_state.map(|mut guard| {
+                    let entry = guard.sorted_mut().get_mut(index).unwrap();
+                    entry.state = DeletionState::Deleted;
                 });
-                assert!(!ENTRIES.is_locked());
             } else {
-                ENTRIES.map(|mut guard| {
-                    let entry = guard.get_mut(index).unwrap();
-                    entry.deletion_state = DeletionState::Error;
+                sorting_state.map(|mut guard| {
+                    let entry = guard.sorted_mut().get_mut(index).unwrap();
+                    entry.state = DeletionState::Error;
                 });
-                assert!(!ENTRIES.is_locked());
             };
         });
     }
@@ -319,8 +316,10 @@ impl App {
         let rx = self.rx.clone();
 
         thread::spawn(move || loop {
-            if rx.recv().is_ok() {
-                sorting_state.lock().sort();
+            if let Ok(entry) = rx.recv() {
+                let mut sorting_state = sorting_state.lock();
+                sorting_state.add_entry(&entry);
+                sorting_state.sort();
             } else {
                 return;
             }
