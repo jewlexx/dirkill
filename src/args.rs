@@ -3,7 +3,7 @@ use std::path::{Path, PathBuf};
 use clap::Parser;
 use crossbeam_channel::Sender;
 
-use crate::{files::DirEntry, UpdateChannel};
+use crate::UpdateChannel;
 
 #[derive(Debug, Clone, Parser)]
 #[clap(name = "Dir Kill", version, author, about)]
