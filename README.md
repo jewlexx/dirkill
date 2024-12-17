@@ -1,6 +1,6 @@
 # DirKill
 
-Stupidly fast directory deletion.
+Fast, reliable and interactive directory deletion tool.
 
 ## TODO
 
