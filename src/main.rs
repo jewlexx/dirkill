@@ -39,10 +39,15 @@ fn main() {
         _ => Color::Yellow,
     };
 
-    let mut app = App::new(color);
+    let (tx, rx) = std::sync::mpsc::channel::<()>();
+
+    let mut app = App::new(color, rx);
 
     thread::spawn(move || {
-        args.get_files(dunce::canonicalize(&args.dir).expect("Failed to canonicalize path"));
+        args.get_files(
+            dunce::canonicalize(&args.dir).expect("Failed to canonicalize path"),
+            &tx,
+        );
     });
 
     if app.run().is_err() {

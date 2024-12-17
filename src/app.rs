@@ -1,4 +1,8 @@
-use std::{io, time::Duration};
+use std::{
+    io,
+    thread::{self, JoinHandle},
+    time::Duration,
+};
 
 use crossterm::{
     event::{self, Event, KeyCode},
@@ -61,6 +65,7 @@ impl From<Sorting> for usize {
     }
 }
 
+#[derive(Debug)]
 struct Entry {
     path: String,
     size: u64,
@@ -104,6 +109,8 @@ pub struct App {
     highlight_color: Color,
     sorting: Sorting,
     sorting_inverted: bool,
+    rx: std::sync::mpsc::Receiver<()>,
+    sorted_entries: Mutex<Vec<Entry>>,
 }
 
 impl App {
@@ -119,19 +126,22 @@ impl App {
         Constraint::Percentage(90),
     ];
 
-    pub fn new(highlight_color: Color) -> Self {
+    pub fn new(highlight_color: Color, rx: std::sync::mpsc::Receiver<()>) -> Self {
         Self {
             index: 0,
             state: TableState::default(),
             highlight_color,
             sorting: Sorting::default(),
             sorting_inverted: false,
+            rx,
+            sorted_entries: Mutex::new(Vec::new()),
         }
     }
 
     #[tracing::instrument]
     pub fn next(&mut self) {
         let entries_len = ENTRIES.lock().len();
+        assert!(!ENTRIES.is_locked());
 
         if self.index < entries_len - 1 {
             self.index += 1;
@@ -143,6 +153,7 @@ impl App {
     #[tracing::instrument]
     pub fn previous(&mut self) {
         let entries_len = ENTRIES.lock().len();
+        assert!(!ENTRIES.is_locked());
 
         if self.index > 0 {
             self.index = self.index.wrapping_sub(1);
@@ -158,11 +169,20 @@ impl App {
         let mut terminal = Terminal::new(CrosstermBackend::new(io::stdout()))?;
 
         loop {
-            if *CHANGED.lock() {
+            // Complex. will remove
+            let has_changed = CHANGED.lock();
+            trace!("has_changed: {has_changed:?}");
+            let has_changed = {
+                let res = *has_changed;
+                drop(has_changed);
+                res
+            };
+
+            if has_changed {
                 terminal.draw(|f| self.ui(f))?;
             }
 
-            if event::poll(Duration::ZERO)? {
+            if event::poll(Duration::from_secs_f32(1.0 / 60.0))? {
                 if let Event::Key(key) = event::read()? {
                     match key.code {
                         KeyCode::Char('q') => break,
@@ -303,6 +323,35 @@ impl App {
             .bg(self.highlight_color)
             .add_modifier(Modifier::BOLD)
     }
+
+    // fn sort_entries(&self) -> JoinHandle<()> {
+    //     thread::spawn(|| {
+    //         loop {
+    //             if self.rx.recv().is_ok() {
+    //                 let mut unsorted_entries = ENTRIES.lock();
+
+    //                 unsorted_entries.sort_unstable_by(|a, b| match self.sorting {
+    //                     Sorting::Name => a.entry.path().cmp(b.entry.path()),
+    //                     // Sorting is inverse here, because we want the larger size to be first
+    //                     Sorting::Size => b.size.cmp(&a.size),
+    //                 });
+
+    //                 if self.sorting_inverted {
+    //                     unsorted_entries.reverse();
+    //                 }
+
+    //                 let mut sorted_entries = self.sorted_entries.lock();
+    //                 *sorted_entries = unsorted_entries.iter().map(Entry::from).collect();
+
+    //                 // Locks explicitly dropped here
+    //                 drop(unsorted_entries);
+    //                 drop(sorted_entries);
+    //             } else {
+    //                 return;
+    //             }
+    //         }
+    //     })
+    // }
 
     fn ui(&mut self, frame: &mut Frame<'_>) {
         self.state.select(Some(self.index));

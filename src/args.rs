@@ -2,7 +2,7 @@ use std::path::{Path, PathBuf};
 
 use clap::Parser;
 
-use crate::app::{CHANGED, ENTRIES};
+use crate::app::ENTRIES;
 
 #[derive(Debug, Clone, Parser)]
 #[clap(name = "Dir Kill", version, author, about)]
@@ -29,7 +29,11 @@ pub struct Args {
 }
 
 impl Args {
-    pub fn get_files(&self, search_dir: impl AsRef<Path> + core::fmt::Debug) {
+    pub fn get_files(
+        &self,
+        search_dir: impl AsRef<Path> + core::fmt::Debug,
+        tx: &std::sync::mpsc::Sender<()>,
+    ) {
         let search_dir = search_dir.as_ref();
         let target_dir = &self.target;
 
@@ -58,7 +62,7 @@ impl Args {
                         let mut entries_lock = ENTRIES.lock();
                         entries_lock.push(entry.into());
                         drop(entries_lock);
-                        *CHANGED.lock() = true;
+                        tx.send(()).unwrap();
                     }
                 }
                 None => break,
