@@ -38,9 +38,12 @@ jobs:
         shell: bash
         run: |
           cd target/${{ matrix.target }}/release
-          strip dirkill
-          tar czvf dirkill-${{ matrix.target }}.tar.gz dirkill
+          if [ "${{ matrix.os }}" = "ubuntu-latest" ]; then
+              strip dirkill
+              tar czvf dirkill-${{ matrix.target }}.tar.gz dirkill
+          fi
           if [ "${{ matrix.os }}" = "windows-latest" ]; then
+              strip dirkill.exe
               7z a dirkill-${{ matrix.target }}.zip dirkill.exe
           fi
 
