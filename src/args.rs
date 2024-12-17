@@ -1,8 +1,9 @@
 use std::path::{Path, PathBuf};
 
 use clap::Parser;
+use parking_lot::MutexGuard;
 
-use crate::app::ENTRIES;
+use crate::app::{CHANGED, ENTRIES};
 
 #[derive(Debug, Clone, Parser)]
 #[clap(name = "Dir Kill", version, author, about)]
@@ -59,11 +60,19 @@ impl Args {
                         // Do not continue searching the directory, as it is the target directory
                         iter.skip_current_dir();
                         // debug!("Found dir {}", path.display());
-                        let mut entries_lock = ENTRIES.lock();
-                        entries_lock.push(entry.into());
-                        drop(entries_lock);
-                        tx.send(()).unwrap();
+                        {
+                            let mut entries_lock = ENTRIES.lock();
+                            entries_lock.push(entry.into());
+                            MutexGuard::unlock_fair(entries_lock);
+                        }
+                        {
+                            let mut changed_lock = CHANGED.lock();
+                            *changed_lock = true;
+                            MutexGuard::unlock_fair(changed_lock);
+                        }
                     }
+                    // assert!(!ENTRIES.is_locked());
+                    // assert!(!CHANGED.is_locked());
                 }
                 None => break,
                 _ => {}

@@ -182,7 +182,7 @@ impl App {
                 terminal.draw(|f| self.ui(f))?;
             }
 
-            if event::poll(Duration::from_secs_f32(1.0 / 60.0))? {
+            if event::poll(Duration::ZERO)? {
                 if let Event::Key(key) = event::read()? {
                     match key.code {
                         KeyCode::Char('q') => break,
@@ -367,6 +367,7 @@ impl App {
 
         let block = Block::default();
 
+        trace!("Starting sort");
         let list_entries = {
             // TODO: Sort on a separate thread
             let mut unsorted_entries = ENTRIES.lock();
@@ -384,9 +385,7 @@ impl App {
             // Lock dropped here
             unsorted_entries.iter().map(Entry::from).collect::<Vec<_>>()
         };
-
-        // Check that the lock was dropped at the end of the above scope
-        assert!(!ENTRIES.is_locked());
+        trace!("Finished sort");
 
         let list_rows = list_entries
             .iter()

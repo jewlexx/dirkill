@@ -1,6 +1,6 @@
 use std::path::Path;
 
-#[tracing::instrument]
+// #[tracing::instrument]
 pub fn recursive_size(path: impl AsRef<Path> + std::fmt::Debug) -> u64 {
     let path = path.as_ref();
     let mut size = 0;
