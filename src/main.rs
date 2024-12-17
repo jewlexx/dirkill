@@ -46,7 +46,7 @@ async fn main() {
 
     let (tx, rx) = crossbeam_channel::unbounded::<UpdateChannel>();
 
-    let app = App::new(color, rx);
+    let app = App::new(color, tx.clone(), rx);
 
     app.sort_entries();
 

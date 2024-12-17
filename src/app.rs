@@ -5,7 +5,7 @@ use std::{
     time::Duration,
 };
 
-use crossbeam_channel::Receiver;
+use crossbeam_channel::{Receiver, Sender};
 use crossterm::{
     event::{self, Event, KeyCode, KeyEventKind},
     execute,
@@ -105,6 +105,7 @@ pub struct App {
     index: usize,
     state: TableState,
     highlight_color: Color,
+    tx: Sender<UpdateChannel>,
     rx: Receiver<UpdateChannel>,
     sorting_state: Arc<Mutex<Sorting>>,
 }
@@ -122,11 +123,16 @@ impl App {
         Constraint::Percentage(90),
     ];
 
-    pub fn new(highlight_color: Color, rx: Receiver<UpdateChannel>) -> Self {
+    pub fn new(
+        highlight_color: Color,
+        tx: Sender<UpdateChannel>,
+        rx: Receiver<UpdateChannel>,
+    ) -> Self {
         Self {
             index: 0,
             state: TableState::default(),
             highlight_color,
+            tx,
             rx,
             sorting_state: Arc::new(Mutex::new(Sorting::default())),
         }
@@ -181,7 +187,7 @@ impl App {
                                 KeyCode::Down => self.next(),
                                 KeyCode::Up => self.previous(),
                                 KeyCode::Tab | KeyCode::BackTab => {
-                                    self.sorting_state.lock().invert()
+                                    self.sorting_state.lock().invert();
                                 }
                                 KeyCode::Right | KeyCode::Left => {
                                     self.sorting_state.lock().switch_column();
@@ -192,6 +198,7 @@ impl App {
                                 }
                             }
                             *CHANGED.lock() = true;
+                            self.tx.send(None)?;
                         }
                     }
                     assert!(!CHANGED.is_locked());
