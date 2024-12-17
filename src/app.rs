@@ -1,9 +1,11 @@
 use std::{
     io,
+    sync::Arc,
     thread::{self, JoinHandle},
     time::Duration,
 };
 
+use crossbeam_channel::Receiver;
 use crossterm::{
     event::{self, Event, KeyCode},
     execute,
@@ -23,6 +25,7 @@ use ratatui::{
 use crate::{
     files::{DeletionState, DirEntry},
     locks::LockMap,
+    sorting::{Column, Sorting},
 };
 
 pub fn pre_exit() -> anyhow::Result<()> {
@@ -39,34 +42,27 @@ pub static ENTRIES: Mutex<Vec<DirEntry>> = Mutex::new(Vec::new());
 pub static LOADING: Mutex<bool> = Mutex::new(true);
 pub static CHANGED: Mutex<bool> = Mutex::new(false);
 
-#[derive(Default, Debug, Copy, Clone, PartialEq, Eq)]
-pub enum Sorting {
-    #[default]
-    Name,
-    Size,
-}
-
-impl From<usize> for Sorting {
+impl From<usize> for Column {
     fn from(value: usize) -> Self {
         match value {
-            0 => Sorting::Name,
-            1 => Sorting::Size,
+            0 => Column::Name,
+            1 => Column::Size,
             _ => unreachable!(),
         }
     }
 }
 
-impl From<Sorting> for usize {
-    fn from(value: Sorting) -> Self {
+impl From<Column> for usize {
+    fn from(value: Column) -> Self {
         match value {
-            Sorting::Name => 0,
-            Sorting::Size => 1,
+            Column::Name => 0,
+            Column::Size => 1,
         }
     }
 }
 
-#[derive(Debug)]
-struct Entry {
+#[derive(Debug, Clone)]
+pub struct Entry {
     path: String,
     size: u64,
     state: DeletionState,
@@ -107,10 +103,8 @@ pub struct App {
     index: usize,
     state: TableState,
     highlight_color: Color,
-    sorting: Sorting,
-    sorting_inverted: bool,
-    rx: std::sync::mpsc::Receiver<()>,
-    sorted_entries: Mutex<Vec<Entry>>,
+    rx: Receiver<()>,
+    sorting_state: Arc<Mutex<Sorting>>,
 }
 
 impl App {
@@ -126,15 +120,13 @@ impl App {
         Constraint::Percentage(90),
     ];
 
-    pub fn new(highlight_color: Color, rx: std::sync::mpsc::Receiver<()>) -> Self {
+    pub fn new(highlight_color: Color, rx: Receiver<()>) -> Self {
         Self {
             index: 0,
             state: TableState::default(),
             highlight_color,
-            sorting: Sorting::default(),
-            sorting_inverted: false,
             rx,
-            sorted_entries: Mutex::new(Vec::new()),
+            sorting_state: Arc::new(Mutex::new(Sorting::default())),
         }
     }
 
@@ -188,19 +180,8 @@ impl App {
                         KeyCode::Char('q') => break,
                         KeyCode::Down => self.next(),
                         KeyCode::Up => self.previous(),
-                        KeyCode::Tab | KeyCode::BackTab => {
-                            self.sorting_inverted = !self.sorting_inverted;
-                        }
-                        KeyCode::Right => {
-                            let old: usize = self.sorting.into();
-
-                            self.sorting = if old >= 2 { 0 } else { old + 1 }.into();
-                        }
-                        KeyCode::Left => {
-                            let old: usize = self.sorting.into();
-
-                            self.sorting = if old == 0 { 2 } else { old - 1 }.into();
-                        }
+                        KeyCode::Tab | KeyCode::BackTab => self.sorting_state.lock().invert(),
+                        KeyCode::Right | KeyCode::Left => self.sorting_state.lock().switch_column(),
                         KeyCode::Char(' ') => self.delete_entry(self.index),
                         _ => {}
                     }
@@ -293,7 +274,7 @@ impl App {
     }
 
     fn path_header(&self) -> String {
-        let path_base = if self.sorting == Sorting::Name {
+        let path_base = if self.sorting_state.lock().column() == Column::Name {
             "> Path"
         } else {
             "Path"
@@ -306,7 +287,7 @@ impl App {
     }
 
     fn size_header(&self) -> &'static str {
-        if self.sorting == Sorting::Size {
+        if self.sorting_state.lock().column() == Column::Size {
             "> Size"
         } else {
             "Size"
@@ -324,34 +305,18 @@ impl App {
             .add_modifier(Modifier::BOLD)
     }
 
-    // fn sort_entries(&self) -> JoinHandle<()> {
-    //     thread::spawn(|| {
-    //         loop {
-    //             if self.rx.recv().is_ok() {
-    //                 let mut unsorted_entries = ENTRIES.lock();
+    pub fn sort_entries(&self) -> JoinHandle<()> {
+        let sorting_state = self.sorting_state.clone();
+        let rx = self.rx.clone();
 
-    //                 unsorted_entries.sort_unstable_by(|a, b| match self.sorting {
-    //                     Sorting::Name => a.entry.path().cmp(b.entry.path()),
-    //                     // Sorting is inverse here, because we want the larger size to be first
-    //                     Sorting::Size => b.size.cmp(&a.size),
-    //                 });
-
-    //                 if self.sorting_inverted {
-    //                     unsorted_entries.reverse();
-    //                 }
-
-    //                 let mut sorted_entries = self.sorted_entries.lock();
-    //                 *sorted_entries = unsorted_entries.iter().map(Entry::from).collect();
-
-    //                 // Locks explicitly dropped here
-    //                 drop(unsorted_entries);
-    //                 drop(sorted_entries);
-    //             } else {
-    //                 return;
-    //             }
-    //         }
-    //     })
-    // }
+        thread::spawn(move || loop {
+            if rx.recv().is_ok() {
+                sorting_state.lock().sort();
+            } else {
+                return;
+            }
+        })
+    }
 
     fn ui(&mut self, frame: &mut Frame<'_>) {
         self.state.select(Some(self.index));
@@ -368,23 +333,7 @@ impl App {
         let block = Block::default();
 
         trace!("Starting sort");
-        let list_entries = {
-            // TODO: Sort on a separate thread
-            let mut unsorted_entries = ENTRIES.lock();
-
-            unsorted_entries.sort_unstable_by(|a, b| match self.sorting {
-                Sorting::Name => a.entry.path().cmp(b.entry.path()),
-                // Sorting is inverse here, because we want the larger size to be first
-                Sorting::Size => b.size.cmp(&a.size),
-            });
-
-            if self.sorting_inverted {
-                unsorted_entries.reverse();
-            }
-
-            // Lock dropped here
-            unsorted_entries.iter().map(Entry::from).collect::<Vec<_>>()
-        };
+        let list_entries = self.sorting_state.lock().sorted().to_vec();
         trace!("Finished sort");
 
         let list_rows = list_entries

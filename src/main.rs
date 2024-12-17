@@ -15,6 +15,7 @@ mod files;
 mod locks;
 #[cfg(debug_assertions)]
 mod logs;
+mod sorting;
 
 #[macro_use]
 extern crate tracing;
@@ -39,9 +40,11 @@ fn main() {
         _ => Color::Yellow,
     };
 
-    let (tx, rx) = std::sync::mpsc::channel::<()>();
+    let (tx, rx) = crossbeam_channel::unbounded::<()>();
 
     let mut app = App::new(color, rx);
+
+    app.sort_entries();
 
     thread::spawn(move || {
         args.get_files(

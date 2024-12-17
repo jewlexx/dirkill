@@ -20,6 +20,7 @@ chrono = "0.4"
 clap = { version = "4.4", features = ["derive"] }
 # Version 0.26 and up has a bug where [`event::read`] returns twice
 colored = "2.1.0"
+crossbeam-channel = "0.5.14"
 crossterm = "0.28.1"
 dunce = "1.0"
 parking_lot = "0.12"
