@@ -39,9 +39,9 @@ pub fn init_tracing() -> anyhow::Result<()> {
     let (non_blocking, guard) = tracing_appender::non_blocking(Writer::new(file));
 
     tracing_subscriber::fmt()
-        .with_span_events(FmtSpan::NEW | FmtSpan::CLOSE | FmtSpan::ENTER | FmtSpan::EXIT)
+        .with_span_events(FmtSpan::CLOSE)
         .with_thread_names(true)
-        .with_max_level(Level::TRACE)
+        .with_max_level(Level::DEBUG)
         .with_writer(non_blocking)
         .init();
 

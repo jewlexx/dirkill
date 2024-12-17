@@ -20,7 +20,8 @@ mod sorting;
 #[macro_use]
 extern crate tracing;
 
-fn main() {
+#[tokio::main]
+async fn main() {
     // Do not bother initializing tracing if we are not in debug mode
     #[cfg(debug_assertions)]
     assert!(logs::init_tracing().is_ok(), "Failed to initialize tracing");
@@ -42,7 +43,7 @@ fn main() {
 
     let (tx, rx) = crossbeam_channel::unbounded::<()>();
 
-    let mut app = App::new(color, rx);
+    let app = App::new(color, rx);
 
     app.sort_entries();
 
@@ -53,7 +54,7 @@ fn main() {
         );
     });
 
-    if app.run().is_err() {
+    if app.run().await.is_err() {
         error!("Failed to run app");
     };
 }

@@ -130,7 +130,7 @@ impl App {
         }
     }
 
-    #[tracing::instrument]
+    #[tracing::instrument(skip(self))]
     pub fn next(&mut self) {
         let entries_len = ENTRIES.lock().len();
         assert!(!ENTRIES.is_locked());
@@ -142,7 +142,7 @@ impl App {
         }
     }
 
-    #[tracing::instrument]
+    #[tracing::instrument(skip(self))]
     pub fn previous(&mut self) {
         let entries_len = ENTRIES.lock().len();
         assert!(!ENTRIES.is_locked());
@@ -154,42 +154,51 @@ impl App {
         }
     }
 
-    pub fn run(&mut self) -> anyhow::Result<()> {
+    pub async fn run(mut self) -> anyhow::Result<()> {
         enable_raw_mode()?;
         execute!(io::stdout(), EnterAlternateScreen)?;
 
         let mut terminal = Terminal::new(CrosstermBackend::new(io::stdout()))?;
 
-        loop {
-            // Complex. will remove
-            let has_changed = CHANGED.lock();
-            trace!("has_changed: {has_changed:?}");
-            let has_changed = {
-                let res = *has_changed;
-                drop(has_changed);
-                res
-            };
-
-            if has_changed {
-                terminal.draw(|f| self.ui(f))?;
-            }
-
-            if event::poll(Duration::ZERO)? {
-                if let Event::Key(key) = event::read()? {
-                    match key.code {
-                        KeyCode::Char('q') => break,
-                        KeyCode::Down => self.next(),
-                        KeyCode::Up => self.previous(),
-                        KeyCode::Tab | KeyCode::BackTab => self.sorting_state.lock().invert(),
-                        KeyCode::Right | KeyCode::Left => self.sorting_state.lock().switch_column(),
-                        KeyCode::Char(' ') => self.delete_entry(self.index),
-                        _ => {}
+        tokio::spawn(async move {
+            let mut interval = tokio::time::interval(Duration::from_secs_f32(1.0 / 30.0));
+            loop {
+                // Ui-run
+                // Scope exists so that `CHANGED` is dropped before the next interval tick
+                {
+                    let mut has_changed = CHANGED.lock();
+                    if *has_changed {
+                        terminal.draw(|f| self.ui(f))?;
+                        *has_changed = false;
                     }
-                    *CHANGED.lock() = true;
+                };
+
+                if event::poll(Duration::ZERO)? {
+                    if let Event::Key(key) = event::read()? {
+                        match key.code {
+                            KeyCode::Char('q') => break,
+                            KeyCode::Down => self.next(),
+                            KeyCode::Up => self.previous(),
+                            KeyCode::Tab | KeyCode::BackTab => self.sorting_state.lock().invert(),
+                            KeyCode::Right | KeyCode::Left => {
+                                self.sorting_state.lock().switch_column();
+                            }
+                            KeyCode::Char(' ') => self.delete_entry(self.index),
+                            code => {
+                                debug!("{}", code);
+                            }
+                        }
+                        *CHANGED.lock() = true;
+                    }
+                    assert!(!CHANGED.is_locked());
                 }
-                assert!(!CHANGED.is_locked());
+
+                interval.tick().await;
             }
-        }
+
+            anyhow::Ok(())
+        })
+        .await??;
 
         pre_exit()?;
 
@@ -318,6 +327,7 @@ impl App {
         })
     }
 
+    #[tracing::instrument(skip_all)]
     fn ui(&mut self, frame: &mut Frame<'_>) {
         self.state.select(Some(self.index));
 
