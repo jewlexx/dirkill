@@ -5,7 +5,6 @@ use std::{
     time::Duration,
 };
 
-use crossbeam_channel::{Receiver, Sender};
 use crossterm::{
     event::{self, Event, KeyCode, KeyEventKind},
     execute,
@@ -23,10 +22,10 @@ use ratatui::{
 };
 
 use crate::{
+    comms::Comms,
     files::{DeletionState, DirEntry},
     locks::LockMap,
     sorting::{Column, Sorting},
-    UpdateChannel,
 };
 
 pub fn pre_exit() -> anyhow::Result<()> {
@@ -37,10 +36,6 @@ pub fn pre_exit() -> anyhow::Result<()> {
 
     Ok(())
 }
-
-// Some state handlers
-pub static LOADING: Mutex<bool> = Mutex::new(true);
-pub static CHANGED: Mutex<bool> = Mutex::new(false);
 
 impl From<usize> for Column {
     fn from(value: usize) -> Self {
@@ -105,8 +100,7 @@ pub struct App {
     index: usize,
     state: TableState,
     highlight_color: Color,
-    tx: Sender<UpdateChannel>,
-    rx: Receiver<UpdateChannel>,
+    comms: Comms,
     sorting_state: Arc<Mutex<Sorting>>,
 }
 
@@ -123,17 +117,12 @@ impl App {
         Constraint::Percentage(90),
     ];
 
-    pub fn new(
-        highlight_color: Color,
-        tx: Sender<UpdateChannel>,
-        rx: Receiver<UpdateChannel>,
-    ) -> Self {
+    pub fn new(highlight_color: Color, comms: Comms) -> Self {
         Self {
             index: 0,
             state: TableState::default(),
             highlight_color,
-            tx,
-            rx,
+            comms,
             sorting_state: Arc::new(Mutex::new(Sorting::default())),
         }
     }
@@ -170,14 +159,10 @@ impl App {
             let mut interval = tokio::time::interval(Duration::from_secs_f32(1.0 / 30.0));
             loop {
                 // Ui-run
-                // Scope exists so that `CHANGED` is dropped before the next interval tick
-                {
-                    let mut has_changed = CHANGED.lock();
-                    if *has_changed {
-                        terminal.draw(|f| self.ui(f))?;
-                        *has_changed = false;
-                    }
-                };
+                if self.comms.changed() {
+                    terminal.draw(|f| self.ui(f))?;
+                    self.comms.set_changed(false);
+                }
 
                 if event::poll(Duration::ZERO)? {
                     if let Event::Key(key) = event::read()? {
@@ -197,11 +182,10 @@ impl App {
                                     debug!("{}", code);
                                 }
                             }
-                            *CHANGED.lock() = true;
-                            self.tx.send(None)?;
+                            self.comms.set_changed(true);
+                            self.comms.push_sort_tick()?;
                         }
                     }
-                    assert!(!CHANGED.is_locked());
                 }
 
                 interval.tick().await;
@@ -254,7 +238,7 @@ impl App {
                     let entry = guard.sorted_mut().get_mut(index).unwrap();
                     entry.state = DeletionState::Error;
                 });
-            };
+            }
         });
     }
 
@@ -298,8 +282,11 @@ impl App {
             "Path"
         };
 
-        let loading_text = if *LOADING.lock() { " [LOADING]" } else { "" };
-        assert!(!LOADING.is_locked());
+        let loading_text = if self.comms.loading() {
+            " [LOADING]"
+        } else {
+            ""
+        };
 
         format!("{path_base}{loading_text}")
     }
@@ -325,10 +312,10 @@ impl App {
 
     pub fn sort_entries(&self) -> JoinHandle<()> {
         let sorting_state = self.sorting_state.clone();
-        let rx = self.rx.clone();
+        let comms = self.comms.clone();
 
         thread::spawn(move || loop {
-            if let Ok(entry) = rx.recv() {
+            if let Ok(entry) = comms.pop_entry() {
                 let mut sorting_state = sorting_state.lock();
                 if let Some(entry) = entry {
                     sorting_state.add_entry(&entry);

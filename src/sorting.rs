@@ -1,13 +1,11 @@
-use crate::{
-    app::{Entry, CHANGED},
-    files::DirEntry,
-};
+use crate::{app::Entry, comms::Comms, files::DirEntry};
 
 #[derive(Debug, Default, Clone)]
 pub struct Sorting {
     column: Column,
     inverted: bool,
     sorted: Vec<Entry>,
+    comms: Comms,
 }
 
 impl Sorting {
@@ -52,7 +50,7 @@ impl Sorting {
             self.sorted.reverse();
         }
 
-        *CHANGED.lock() = true;
+        self.comms.set_changed(true);
     }
 
     pub fn sorted(&self) -> &[Entry] {

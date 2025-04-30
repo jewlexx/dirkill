@@ -1,11 +1,10 @@
 #![warn(clippy::all, clippy::pedantic, rust_2018_idioms)]
-
-use std::thread;
+#![allow(clippy::missing_errors_doc)]
 
 use app::App;
 use args::Args;
 use clap::Parser;
-use files::DirEntry;
+use comms::Comms;
 use ratatui::style::Color;
 
 mod app;
@@ -13,6 +12,7 @@ mod args;
 mod color;
 mod files;
 
+pub mod comms;
 mod locks;
 #[cfg(debug_assertions)]
 mod logs;
@@ -20,8 +20,6 @@ mod sorting;
 
 #[macro_use]
 extern crate tracing;
-
-pub type UpdateChannel = Option<DirEntry>;
 
 #[tokio::main]
 async fn main() {
@@ -44,20 +42,20 @@ async fn main() {
         _ => Color::Yellow,
     };
 
-    let (tx, rx) = crossbeam_channel::unbounded::<UpdateChannel>();
+    let comms = Comms::default();
 
-    let app = App::new(color, tx.clone(), rx);
+    let app = App::new(color, comms.clone());
 
     app.sort_entries();
 
-    thread::spawn(move || {
+    tokio::spawn(async move {
         args.get_files(
             dunce::canonicalize(&args.dir).expect("Failed to canonicalize path"),
-            &tx,
+            &comms,
         );
     });
 
     if app.run().await.is_err() {
         error!("Failed to run app");
-    };
+    }
 }
