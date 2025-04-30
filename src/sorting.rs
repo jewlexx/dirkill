@@ -1,20 +1,28 @@
+use std::sync::{
+    atomic::{AtomicBool, Ordering},
+    Arc,
+};
+
+use parking_lot::Mutex;
+
 use crate::{app::Entry, comms::Comms, files::DirEntry};
 
 #[derive(Debug, Default, Clone)]
 pub struct Sorting {
     column: Column,
-    inverted: bool,
-    sorted: Vec<Entry>,
+    inverted: Arc<AtomicBool>,
+    sorted: Arc<Mutex<Vec<Entry>>>,
     comms: Comms,
 }
 
 impl Sorting {
     pub fn invert(&mut self) {
-        self.inverted = !self.inverted;
+        let inverted = self.inverted.load(Ordering::Relaxed);
+        self.inverted.store(!inverted, Ordering::Relaxed);
     }
 
     pub fn inverted(&self) -> bool {
-        self.inverted
+        self.inverted.load(Ordering::Relaxed)
     }
 
     pub fn column(&self) -> Column {
@@ -32,13 +40,15 @@ impl Sorting {
         });
     }
 
-    pub fn add_entry(&mut self, new_entry: &DirEntry) {
-        self.sorted.push(Entry::from(new_entry));
+    pub fn add_entry(&self, new_entry: &DirEntry) {
+        self.sorted.lock().push(Entry::from(new_entry));
     }
 
-    pub fn sort(&mut self) {
+    pub fn sort(&self) {
+        self.comms.set_loading(true);
         let column = self.column();
-        self.sorted.sort_unstable_by(|a, b| {
+        let mut unsorted = self.sorted.lock().clone();
+        unsorted.sort_unstable_by(|a, b| {
             match column {
                 Column::Name => a.original.entry.path().cmp(b.original.entry.path()),
                 // Sorting is inverse here, because we want the larger size to be first
@@ -47,18 +57,15 @@ impl Sorting {
         });
 
         if self.inverted() {
-            self.sorted.reverse();
+            unsorted.reverse();
         }
 
         self.comms.set_changed(true);
+        self.comms.set_loading(false);
     }
 
-    pub fn sorted(&self) -> &[Entry] {
-        &self.sorted
-    }
-
-    pub fn sorted_mut(&mut self) -> &mut Vec<Entry> {
-        &mut self.sorted
+    pub fn sorted(&self) -> Arc<Mutex<Vec<Entry>>> {
+        self.sorted.clone()
     }
 }
 

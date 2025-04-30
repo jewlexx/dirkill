@@ -13,7 +13,6 @@ mod color;
 mod files;
 
 pub mod comms;
-mod locks;
 #[cfg(debug_assertions)]
 mod logs;
 mod sorting;

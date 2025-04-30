@@ -1,6 +1,5 @@
 use std::{
     io,
-    sync::Arc,
     thread::{self, JoinHandle},
     time::Duration,
 };
@@ -11,7 +10,6 @@ use crossterm::{
     style::Stylize,
     terminal::{enable_raw_mode, EnterAlternateScreen},
 };
-use parking_lot::Mutex;
 use ratatui::{
     backend::CrosstermBackend,
     layout::{Alignment, Constraint, Layout},
@@ -24,7 +22,6 @@ use ratatui::{
 use crate::{
     comms::Comms,
     files::{DeletionState, DirEntry},
-    locks::LockMap,
     sorting::{Column, Sorting},
 };
 
@@ -101,7 +98,7 @@ pub struct App {
     state: TableState,
     highlight_color: Color,
     comms: Comms,
-    sorting_state: Arc<Mutex<Sorting>>,
+    sorting_state: Sorting,
 }
 
 impl App {
@@ -123,13 +120,13 @@ impl App {
             state: TableState::default(),
             highlight_color,
             comms,
-            sorting_state: Arc::new(Mutex::new(Sorting::default())),
+            sorting_state: Sorting::default(),
         }
     }
 
     #[tracing::instrument(skip(self))]
     pub fn next(&mut self) {
-        let entries_len = self.sorting_state.lock().sorted().len();
+        let entries_len = self.sorting_state.sorted().lock().len();
 
         if self.index < entries_len - 1 {
             self.index += 1;
@@ -140,7 +137,7 @@ impl App {
 
     #[tracing::instrument(skip(self))]
     pub fn previous(&mut self) {
-        let entries_len = self.sorting_state.lock().sorted().len();
+        let entries_len = self.sorting_state.sorted().lock().len();
 
         if self.index > 0 {
             self.index = self.index.wrapping_sub(1);
@@ -172,10 +169,10 @@ impl App {
                                 KeyCode::Down => self.next(),
                                 KeyCode::Up => self.previous(),
                                 KeyCode::Tab | KeyCode::BackTab => {
-                                    self.sorting_state.lock().invert();
+                                    self.sorting_state.invert();
                                 }
                                 KeyCode::Right | KeyCode::Left => {
-                                    self.sorting_state.lock().switch_column();
+                                    self.sorting_state.switch_column();
                                 }
                                 KeyCode::Char(' ') => self.delete_entry(self.index),
                                 code => {
@@ -204,40 +201,34 @@ impl App {
     fn delete_entry(&mut self, index: usize) {
         let sorting_state = self.sorting_state.clone();
         std::thread::spawn(move || {
-            if sorting_state.map(|mut state| {
-                // This must be a separate line to ensure that entries is not borrowed twice
-                let entries = state.sorted_mut();
-                if entries
-                    .get_mut(index)
-                    .is_some_and(|entry| entry.state == DeletionState::Deleted)
-                {
-                    entries.remove(index);
+            let sorted = sorting_state.sorted();
 
-                    true
-                } else {
-                    false
-                }
-            }) {
+            // This must be a separate line to ensure that entries is not borrowed twice
+            let mut entries = sorted.lock();
+            if entries
+                .get_mut(index)
+                .is_some_and(|entry| entry.state == DeletionState::Deleted)
+            {
+                entries.remove(index);
+
                 return;
             }
 
-            let entry_path = sorting_state.map(|mut guard| {
-                let entry = guard.sorted_mut().get_mut(index).unwrap();
+            let mut lock = sorted.lock();
+
+            let entry_path = {
+                let entry = lock.get_mut(index).unwrap();
                 entry.state = DeletionState::Deleting;
 
                 entry.original.entry.path().to_path_buf()
-            });
+            };
+
+            let entry = lock.get_mut(index).unwrap();
 
             if let Ok(()) = std::fs::remove_dir_all(entry_path) {
-                sorting_state.map(|mut guard| {
-                    let entry = guard.sorted_mut().get_mut(index).unwrap();
-                    entry.state = DeletionState::Deleted;
-                });
+                entry.state = DeletionState::Deleted;
             } else {
-                sorting_state.map(|mut guard| {
-                    let entry = guard.sorted_mut().get_mut(index).unwrap();
-                    entry.state = DeletionState::Error;
-                });
+                entry.state = DeletionState::Error;
             }
         });
     }
@@ -276,7 +267,7 @@ impl App {
     }
 
     fn path_header(&self) -> String {
-        let path_base = if self.sorting_state.lock().column() == Column::Name {
+        let path_base = if self.sorting_state.column() == Column::Name {
             "> Path"
         } else {
             "Path"
@@ -292,7 +283,7 @@ impl App {
     }
 
     fn size_header(&self) -> &'static str {
-        if self.sorting_state.lock().column() == Column::Size {
+        if self.sorting_state.column() == Column::Size {
             "> Size"
         } else {
             "Size"
@@ -316,7 +307,6 @@ impl App {
 
         thread::spawn(move || loop {
             if let Ok(entry) = comms.pop_entry() {
-                let mut sorting_state = sorting_state.lock();
                 if let Some(entry) = entry {
                     sorting_state.add_entry(&entry);
                 }
@@ -343,7 +333,7 @@ impl App {
         let block = Block::default();
 
         trace!("Starting sort");
-        let list_entries = self.sorting_state.lock().sorted().to_vec();
+        let list_entries = self.sorting_state.sorted().lock().clone();
         trace!("Finished sort");
 
         let list_rows = list_entries
