@@ -174,7 +174,7 @@ impl App {
                                 KeyCode::Right | KeyCode::Left => {
                                     self.sorting_state.switch_column();
                                 }
-                                KeyCode::Char(' ') => _ = self.delete_entry(self.index).await,
+                                KeyCode::Char(' ') => self.delete_entry(self.index).await,
                                 code => {
                                     debug!("{}", code);
                                 }
