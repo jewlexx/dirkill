@@ -54,12 +54,9 @@ impl Sorting {
 
     #[tracing::instrument(skip(self))]
     pub async fn sort(&self) {
-        let column = self.column();
-        debug!("{column:?}");
-        let mut unsorted = self.sorted.lock().await.clone();
+        let mut unsorted = self.sorted.lock().await;
         unsorted.sort_unstable_by(|a, b| {
-            debug!("is name {}", column.is_name());
-            match column.clone() {
+            match self.column() {
                 column if column.is_name() => a.original.entry.path().cmp(b.original.entry.path()),
                 // Sorting is inverse here, because we want the larger size to be first
                 column if column.is_size() => b.size.cmp(&a.size),
