@@ -415,7 +415,6 @@ dependencies = [
  "chrono",
  "clap",
  "colored",
- "crossbeam-channel",
  "crossterm 0.29.0",
  "dunce",
  "flume",
