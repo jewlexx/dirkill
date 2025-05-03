@@ -6,7 +6,6 @@ use args::Args;
 use clap::Parser;
 use comms::Comms;
 use ratatui::style::Color;
-use tokio::runtime::Handle;
 
 mod app;
 mod args;
