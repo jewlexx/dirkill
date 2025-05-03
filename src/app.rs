@@ -174,7 +174,7 @@ impl App {
                                 KeyCode::Right | KeyCode::Left => {
                                     self.sorting_state.switch_column();
                                 }
-                                KeyCode::Char(' ') => _ = self.delete_entry(self.index),
+                                KeyCode::Char(' ') => _ = self.delete_entry(self.index).await,
                                 code => {
                                     debug!("{}", code);
                                 }
@@ -220,6 +220,7 @@ impl App {
             entry.original.entry.path().to_path_buf()
         };
 
+        let comms = self.comms.clone();
         tokio::spawn(async move {
             let state = if let Ok(()) = tokio::fs::remove_dir_all(entry_path).await {
                 DeletionState::Deleted
@@ -231,9 +232,8 @@ impl App {
             let entry = entries.get_mut(index).unwrap();
 
             entry.state = state;
-        })
-        .await
-        .unwrap();
+            comms.set_changed(true);
+        });
     }
 
     fn title(&self) -> Paragraph<'_> {
