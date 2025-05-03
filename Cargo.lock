@@ -245,15 +245,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "5b63caa9aa9397e2d9480a9b13673856c78d8ac123288526c37d7839f2a86990"
 
 [[package]]
-name = "colored"
-version = "3.0.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "fde0e0ec90c9dfb3b4b1a0891a7dcd0e2bffde2f7efed5fe7c9bb00e5bfb915e"
-dependencies = [
- "windows-sys 0.59.0",
-]
-
-[[package]]
 name = "compact_str"
 version = "0.8.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -411,19 +402,15 @@ version = "0.3.0"
 dependencies = [
  "anyhow",
  "bytesize",
- "cfg-if",
  "chrono",
  "clap",
- "colored",
  "crossterm 0.29.0",
- "dunce",
  "flume",
  "fs_extra",
  "quork",
  "ratatui",
  "rstest",
  "strip-ansi-escapes",
- "thiserror 2.0.12",
  "tokio",
  "tracing",
  "tracing-appender",
@@ -439,12 +426,6 @@ checksum = "95249b50c6c185bee49034bcb378a49dc2b5dff0be90ff6616d31d64febab05d"
 dependencies = [
  "litrs",
 ]
-
-[[package]]
-name = "dunce"
-version = "1.0.5"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "92773504d58c093f6de2459af4af33faa518c13451eb8f2b5698ed3d36e7c813"
 
 [[package]]
 name = "either"

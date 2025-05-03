@@ -1,39 +1,22 @@
-use std::num::ParseIntError;
-
 use ratatui::style::Color;
-use thiserror::Error as AsError;
 
-#[derive(Debug, AsError, PartialEq, Eq)]
-pub enum Error {
-    #[error("Invalid hex provided")]
-    InvalidHex,
-    #[error("Hex value includes alpha channel")]
-    IncludesAlpha,
-    #[error("Hex value must be 3 or 6 characters")]
-    InvalidHexLength,
-    #[error("Failed to parse hex value")]
-    ParseInt(#[from] ParseIntError),
-}
-
-pub type Result<T, E = Error> = std::result::Result<T, E>;
-
-fn validate_chars(string: impl AsRef<str>) -> Result<(), Error> {
+fn validate_chars(string: impl AsRef<str>) -> anyhow::Result<()> {
     let mut chars = string.as_ref().chars();
 
     if chars.all(|c| c.is_ascii_hexdigit()) {
         Ok(())
     } else {
-        Err(Error::InvalidHex)
+        anyhow::bail!("Invalid hex")
     }
 }
 
-fn validate_hex_len(len: usize) -> Result<(), Error> {
+fn validate_hex_len(len: usize) -> anyhow::Result<()> {
     if len == 4 || len == 8 {
-        return Err(Error::IncludesAlpha);
+        anyhow::bail!("Alpha is included in hex");
     }
 
     if len != 3 && len != 6 {
-        return Err(Error::InvalidHexLength);
+        anyhow::bail!("Invalid hex length");
     }
 
     Ok(())
@@ -52,7 +35,7 @@ fn hex_3_to_6(hex_trois: &str) -> String {
     hex
 }
 
-pub fn parse_hex(raw_hex: impl AsRef<str>) -> Result<Color, Error> {
+pub fn parse_hex(raw_hex: impl AsRef<str>) -> anyhow::Result<Color> {
     let raw_hex = raw_hex.as_ref();
 
     let hex_value = raw_hex.trim_start_matches('#');
@@ -88,9 +71,9 @@ mod tests {
 
     #[test]
     fn test_parse_hex() {
-        assert_eq!(parse_hex("#fff"), Ok(Color::Rgb(255, 255, 255)));
-        assert_eq!(parse_hex("#000"), Ok(Color::Rgb(0, 0, 0)));
-        assert_eq!(parse_hex("#c19c00"), Ok(Color::Rgb(193, 156, 0)));
+        assert_eq!(parse_hex("#fff").unwrap(), Color::Rgb(255, 255, 255));
+        assert_eq!(parse_hex("#000").unwrap(), Color::Rgb(0, 0, 0));
+        assert_eq!(parse_hex("#c19c00").unwrap(), Color::Rgb(193, 156, 0));
     }
 
     #[rstest]

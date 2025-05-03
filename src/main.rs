@@ -48,11 +48,7 @@ async fn main() {
     let sorting_task = app.sort_entries();
 
     let discovery_task = tokio::spawn(async move {
-        args.get_files(
-            dunce::canonicalize(&args.dir).expect("Failed to canonicalize path"),
-            &comms,
-        )
-        .await;
+        args.get_files(&args.dir, &comms).await;
     });
 
     if app.run().await.is_err() {
