@@ -3,7 +3,7 @@ use std::sync::{
     Arc,
 };
 
-use crossbeam_channel::{Receiver, RecvError, SendError, Sender};
+use flume::{unbounded, Receiver, RecvError, SendError, Sender};
 
 use crate::files::DirEntry;
 
@@ -20,7 +20,7 @@ pub struct Comms {
 
 impl Default for Comms {
     fn default() -> Self {
-        let (entries_tx, entries_rx) = crossbeam_channel::unbounded::<UpdateChannel>();
+        let (entries_tx, entries_rx) = unbounded::<UpdateChannel>();
 
         Self {
             entries_tx: Arc::new(entries_tx),
@@ -49,15 +49,21 @@ impl Comms {
         self.changed.load(Ordering::Relaxed)
     }
 
-    pub fn push_entry(&self, entry: DirEntry) -> Result<(), SendError<()>> {
-        self.entries_tx.send(Some(entry)).map_err(|_| SendError(()))
+    pub async fn push_entry(&self, entry: DirEntry) -> Result<(), SendError<()>> {
+        self.entries_tx
+            .send_async(Some(entry))
+            .await
+            .map_err(|_| SendError(()))
     }
 
-    pub fn push_sort_tick(&self) -> Result<(), SendError<()>> {
-        self.entries_tx.send(None).map_err(|_| SendError(()))
+    pub async fn push_sort_tick(&self) -> Result<(), SendError<()>> {
+        self.entries_tx
+            .send_async(None)
+            .await
+            .map_err(|_| SendError(()))
     }
 
-    pub fn pop_entry(&self) -> Result<Option<DirEntry>, RecvError> {
-        self.entries_rx.recv()
+    pub async fn pop_entry(&self) -> Result<Option<DirEntry>, RecvError> {
+        self.entries_rx.recv_async().await
     }
 }

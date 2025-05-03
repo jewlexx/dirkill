@@ -180,7 +180,7 @@ impl App {
                                 }
                             }
                             self.comms.set_changed(true);
-                            self.comms.push_sort_tick()?;
+                            self.comms.push_sort_tick().await?;
                         }
                     }
                 }
@@ -221,7 +221,7 @@ impl App {
         };
 
         tokio::spawn(async move {
-            let state = if let Ok(()) = std::fs::remove_dir_all(entry_path) {
+            let state = if let Ok(()) = tokio::fs::remove_dir_all(entry_path).await {
                 DeletionState::Deleted
             } else {
                 DeletionState::Error
@@ -310,7 +310,7 @@ impl App {
 
         tokio::spawn(async move {
             loop {
-                if let Ok(tick) = comms.pop_entry() {
+                if let Ok(tick) = comms.pop_entry().await {
                     debug!("Popped entry. It contained data: {}", tick.is_some());
                     if let Some(entry) = tick {
                         sorting_state.add_entry(&entry).await;

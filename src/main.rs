@@ -6,6 +6,7 @@ use args::Args;
 use clap::Parser;
 use comms::Comms;
 use ratatui::style::Color;
+use tokio::runtime::Handle;
 
 mod app;
 mod args;
@@ -45,16 +46,28 @@ async fn main() {
 
     let app = App::new(color, comms.clone());
 
-    app.sort_entries();
+    let sorting_task = app.sort_entries();
 
-    tokio::spawn(async move {
+    let discovery_task = tokio::spawn(async move {
         args.get_files(
             dunce::canonicalize(&args.dir).expect("Failed to canonicalize path"),
             &comms,
-        );
+        )
+        .await;
     });
 
     if app.run().await.is_err() {
         error!("Failed to run app");
     }
+    let handle = Handle::current();
+    let metrics = handle.metrics();
+    dbg!(metrics.num_alive_tasks());
+
+    discovery_task.abort();
+    discovery_task.await.unwrap();
+    sorting_task.abort();
+    _ = sorting_task.await;
+
+    let metrics = handle.metrics();
+    dbg!(metrics.num_alive_tasks());
 }

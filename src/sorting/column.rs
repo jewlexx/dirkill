@@ -25,11 +25,11 @@ impl Column {
     }
 
     pub fn is_name(&self) -> bool {
-        self.0.load(std::sync::atomic::Ordering::Relaxed)
+        !self.is_size()
     }
 
     pub fn is_size(&self) -> bool {
-        !self.is_name()
+        self.0.load(std::sync::atomic::Ordering::Relaxed)
     }
 }
 

@@ -30,7 +30,7 @@ pub struct Args {
 
 impl Args {
     #[tracing::instrument]
-    pub fn get_files(&self, search_dir: impl AsRef<Path> + core::fmt::Debug, comms: &Comms) {
+    pub async fn get_files(&self, search_dir: impl AsRef<Path> + core::fmt::Debug, comms: &Comms) {
         let search_dir = search_dir.as_ref();
         let target_dir = &self.target;
 
@@ -55,7 +55,7 @@ impl Args {
                         // Do not continue searching the directory, as it is the target directory
                         iter.skip_current_dir();
                         tracing::debug!("Found entry");
-                        comms.push_entry(entry.into()).unwrap();
+                        comms.push_entry(entry.into()).await.unwrap();
                         comms.set_changed(true);
                     }
                 }
