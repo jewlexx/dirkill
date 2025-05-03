@@ -26,7 +26,7 @@ impl Default for Comms {
             entries_tx: Arc::new(entries_tx),
             entries_rx: Arc::new(entries_rx),
 
-            changed: Arc::new(AtomicBool::new(false)),
+            changed: Arc::new(AtomicBool::new(true)),
             loading: Arc::new(AtomicBool::new(false)),
         }
     }

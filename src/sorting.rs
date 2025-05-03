@@ -1,9 +1,12 @@
-use std::sync::{
-    atomic::{AtomicBool, Ordering},
-    Arc,
+use std::{
+    sync::{
+        atomic::{AtomicBool, Ordering},
+        Arc,
+    },
+    thread,
 };
 
-use parking_lot::Mutex;
+use tokio::sync::Mutex;
 
 use crate::{app::Entry, comms::Comms, files::DirEntry};
 
@@ -25,12 +28,15 @@ impl Sorting {
         self.inverted.load(Ordering::Relaxed)
     }
 
+    #[tracing::instrument(skip(self), ret)]
     pub fn column(&self) -> Column {
         self.column
     }
 
+    #[tracing::instrument(skip(self))]
     pub fn set_column(&mut self, column: Column) {
         self.column = column;
+        assert_eq!(self.column(), column);
     }
 
     pub fn switch_column(&mut self) {
@@ -40,14 +46,15 @@ impl Sorting {
         });
     }
 
-    pub fn add_entry(&self, new_entry: &DirEntry) {
-        self.sorted.lock().push(Entry::from(new_entry));
+    pub async fn add_entry(&self, new_entry: &DirEntry) {
+        self.sorted.lock().await.push(Entry::from(new_entry));
     }
 
-    pub fn sort(&self) {
-        self.comms.set_loading(true);
+    #[tracing::instrument(skip(self))]
+    pub async fn sort(&self) {
         let column = self.column();
-        let mut unsorted = self.sorted.lock().clone();
+        debug!("{column:?}");
+        let mut unsorted = self.sorted.lock().await.clone();
         unsorted.sort_unstable_by(|a, b| {
             match column {
                 Column::Name => a.original.entry.path().cmp(b.original.entry.path()),
@@ -64,7 +71,20 @@ impl Sorting {
         self.comms.set_loading(false);
     }
 
-    pub fn sorted(&self) -> Arc<Mutex<Vec<Entry>>> {
+    pub async fn sorted(&self) -> Vec<Entry> {
+        self.sorted.lock().await.clone()
+    }
+
+    pub fn blocking_sorted(&self) -> Vec<Entry> {
+        thread::scope(|scope| {
+            scope
+                .spawn(|| self.sorted.blocking_lock().clone())
+                .join()
+                .unwrap()
+        })
+    }
+
+    pub fn sorted_mut(&self) -> Arc<Mutex<Vec<Entry>>> {
         self.sorted.clone()
     }
 }

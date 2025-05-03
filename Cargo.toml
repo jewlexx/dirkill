@@ -23,7 +23,6 @@ crossbeam-channel = "0.5"
 # Version 0.26 and up has a bug where [`event::read`] returns twice
 crossterm = "0.28"
 dunce = "1.0"
-parking_lot = "0.12"
 quork = { version = "0.8", features = ["lock_api", "spin"] }
 ratatui = "0.29"
 strip-ansi-escapes = "0.2"

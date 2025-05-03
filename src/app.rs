@@ -1,8 +1,4 @@
-use std::{
-    io,
-    thread::{self, JoinHandle},
-    time::Duration,
-};
+use std::{io, time::Duration};
 
 use crossterm::{
     event::{self, Event, KeyCode, KeyEventKind},
@@ -18,6 +14,7 @@ use ratatui::{
     widgets::{Block, Paragraph, Row, Table, TableState},
     Frame, Terminal,
 };
+use tokio::task::JoinHandle;
 
 use crate::{
     comms::Comms,
@@ -125,10 +122,10 @@ impl App {
     }
 
     #[tracing::instrument(skip(self))]
-    pub fn next(&mut self) {
-        let entries_len = self.sorting_state.sorted().lock().len();
+    pub async fn next(&mut self) {
+        let entries_len = self.sorting_state.sorted().await.len();
 
-        if self.index < entries_len - 1 {
+        if self.index < entries_len.checked_sub(1).unwrap_or_default() {
             self.index += 1;
         } else {
             self.index = 0;
@@ -136,8 +133,8 @@ impl App {
     }
 
     #[tracing::instrument(skip(self))]
-    pub fn previous(&mut self) {
-        let entries_len = self.sorting_state.sorted().lock().len();
+    pub async fn previous(&mut self) {
+        let entries_len = self.sorting_state.sorted().await.len();
 
         if self.index > 0 {
             self.index = self.index.wrapping_sub(1);
@@ -166,15 +163,15 @@ impl App {
                         if key.kind == KeyEventKind::Press {
                             match key.code {
                                 KeyCode::Char('q') => break,
-                                KeyCode::Down => self.next(),
-                                KeyCode::Up => self.previous(),
+                                KeyCode::Down => self.next().await,
+                                KeyCode::Up => self.previous().await,
                                 KeyCode::Tab | KeyCode::BackTab => {
                                     self.sorting_state.invert();
                                 }
                                 KeyCode::Right | KeyCode::Left => {
                                     self.sorting_state.switch_column();
                                 }
-                                KeyCode::Char(' ') => self.delete_entry(self.index),
+                                KeyCode::Char(' ') => _ = self.delete_entry(self.index),
                                 code => {
                                     debug!("{}", code);
                                 }
@@ -198,13 +195,13 @@ impl App {
     }
 
     #[tracing::instrument]
-    fn delete_entry(&mut self, index: usize) {
+    async fn delete_entry(&mut self, index: usize) {
         let sorting_state = self.sorting_state.clone();
-        std::thread::spawn(move || {
-            let sorted = sorting_state.sorted();
+        let sorted = sorting_state.sorted_mut();
 
-            // This must be a separate line to ensure that entries is not borrowed twice
-            let mut entries = sorted.lock();
+        // This must be a separate line to ensure that entries is not borrowed twice
+        let entry_path = {
+            let mut entries = sorted.lock().await;
             if entries
                 .get_mut(index)
                 .is_some_and(|entry| entry.state == DeletionState::Deleted)
@@ -214,23 +211,26 @@ impl App {
                 return;
             }
 
-            let mut lock = sorted.lock();
+            let entry = entries.get_mut(index).unwrap();
+            entry.state = DeletionState::Deleting;
 
-            let entry_path = {
-                let entry = lock.get_mut(index).unwrap();
-                entry.state = DeletionState::Deleting;
+            entry.original.entry.path().to_path_buf()
+        };
 
-                entry.original.entry.path().to_path_buf()
+        tokio::spawn(async move {
+            let state = if let Ok(()) = std::fs::remove_dir_all(entry_path) {
+                DeletionState::Deleted
+            } else {
+                DeletionState::Error
             };
 
-            let entry = lock.get_mut(index).unwrap();
+            let mut entries = sorted.lock().await;
+            let entry = entries.get_mut(index).unwrap();
 
-            if let Ok(()) = std::fs::remove_dir_all(entry_path) {
-                entry.state = DeletionState::Deleted;
-            } else {
-                entry.state = DeletionState::Error;
-            }
-        });
+            entry.state = state;
+        })
+        .await
+        .unwrap();
     }
 
     fn title(&self) -> Paragraph<'_> {
@@ -305,14 +305,17 @@ impl App {
         let sorting_state = self.sorting_state.clone();
         let comms = self.comms.clone();
 
-        thread::spawn(move || loop {
-            if let Ok(entry) = comms.pop_entry() {
-                if let Some(entry) = entry {
-                    sorting_state.add_entry(&entry);
+        tokio::spawn(async move {
+            loop {
+                if let Ok(tick) = comms.pop_entry() {
+                    debug!("Popped entry. It contained data: {}", tick.is_some());
+                    if let Some(entry) = tick {
+                        sorting_state.add_entry(&entry).await;
+                    }
+                    sorting_state.sort().await;
+                } else {
+                    return;
                 }
-                sorting_state.sort();
-            } else {
-                return;
             }
         })
     }
@@ -333,7 +336,7 @@ impl App {
         let block = Block::default();
 
         trace!("Starting sort");
-        let list_entries = self.sorting_state.sorted().lock().clone();
+        let list_entries = self.sorting_state.blocking_sorted().clone();
         trace!("Finished sort");
 
         let list_rows = list_entries

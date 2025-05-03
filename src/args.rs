@@ -29,6 +29,7 @@ pub struct Args {
 }
 
 impl Args {
+    #[tracing::instrument]
     pub fn get_files(&self, search_dir: impl AsRef<Path> + core::fmt::Debug, comms: &Comms) {
         let search_dir = search_dir.as_ref();
         let target_dir = &self.target;
@@ -44,7 +45,6 @@ impl Args {
         loop {
             match iter.next() {
                 Some(Ok(entry)) => {
-                    // debug!("Found entry {}", entry.path().display());
                     let path = entry.path();
                     let is_target = path
                         .components()
@@ -54,12 +54,14 @@ impl Args {
                     if is_target && entry.file_type().is_dir() {
                         // Do not continue searching the directory, as it is the target directory
                         iter.skip_current_dir();
+                        tracing::debug!("Found entry");
                         comms.push_entry(entry.into()).unwrap();
+                        comms.set_changed(true);
                     }
-                    // assert!(!ENTRIES.is_locked());
-                    // assert!(!CHANGED.is_locked());
                 }
-                None => break,
+                None => {
+                    break;
+                }
                 _ => {}
             }
         }

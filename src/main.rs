@@ -20,7 +20,7 @@ mod sorting;
 #[macro_use]
 extern crate tracing;
 
-#[tokio::main]
+#[tokio::main(flavor = "multi_thread")]
 async fn main() {
     // Do not bother initializing tracing if we are not in debug mode
     #[cfg(debug_assertions)]
