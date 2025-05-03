@@ -1,9 +1,7 @@
 use std::{fs::File, path::PathBuf};
 
-use parking_lot::Mutex;
 use strip_ansi_escapes::Writer;
 use tracing::Level;
-use tracing_appender::non_blocking::WorkerGuard;
 use tracing_subscriber::fmt::format::FmtSpan;
 
 fn get_log_path() -> std::io::Result<PathBuf> {
@@ -22,8 +20,6 @@ fn get_log_path() -> std::io::Result<PathBuf> {
 
     Ok(base_path)
 }
-
-static TRACING_GUARD: Mutex<Option<WorkerGuard>> = Mutex::new(None);
 
 pub fn init_tracing() -> anyhow::Result<()> {
     let mut path = get_log_path()?;
@@ -45,7 +41,7 @@ pub fn init_tracing() -> anyhow::Result<()> {
         .with_writer(non_blocking)
         .init();
 
-    *TRACING_GUARD.lock() = Some(guard);
+    _ = Box::leak(Box::new(guard));
 
     Ok(())
 }
