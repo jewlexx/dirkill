@@ -58,6 +58,7 @@ impl Sorting {
         debug!("{column:?}");
         let mut unsorted = self.sorted.lock().await.clone();
         unsorted.sort_unstable_by(|a, b| {
+            debug!("is name {}", column.is_name());
             match column.clone() {
                 column if column.is_name() => a.original.entry.path().cmp(b.original.entry.path()),
                 // Sorting is inverse here, because we want the larger size to be first
