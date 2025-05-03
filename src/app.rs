@@ -34,8 +34,8 @@ pub fn pre_exit() -> anyhow::Result<()> {
 impl From<usize> for Column {
     fn from(value: usize) -> Self {
         match value {
-            0 => Column::Name,
-            1 => Column::Size,
+            0 => Column::name(),
+            1 => Column::size(),
             _ => unreachable!(),
         }
     }
@@ -43,9 +43,12 @@ impl From<usize> for Column {
 
 impl From<Column> for usize {
     fn from(value: Column) -> Self {
-        match value {
-            Column::Name => 0,
-            Column::Size => 1,
+        if value.is_name() {
+            0
+        } else if value.is_size() {
+            1
+        } else {
+            unreachable!()
         }
     }
 }
@@ -267,7 +270,7 @@ impl App {
     }
 
     fn path_header(&self) -> String {
-        let path_base = if self.sorting_state.column() == Column::Name {
+        let path_base = if self.sorting_state.column().is_name() {
             "> Path"
         } else {
             "Path"
@@ -283,7 +286,7 @@ impl App {
     }
 
     fn size_header(&self) -> &'static str {
-        if self.sorting_state.column() == Column::Size {
+        if self.sorting_state.column().is_size() {
             "> Size"
         } else {
             "Size"

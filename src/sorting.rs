@@ -1,3 +1,5 @@
+pub mod column;
+
 use std::{
     sync::{
         atomic::{AtomicBool, Ordering},
@@ -6,9 +8,12 @@ use std::{
     thread,
 };
 
+use quork::prelude::FlipImmut;
 use tokio::sync::Mutex;
 
 use crate::{app::Entry, comms::Comms, files::DirEntry};
+
+pub use column::Column;
 
 #[derive(Debug, Default, Clone)]
 pub struct Sorting {
@@ -30,20 +35,17 @@ impl Sorting {
 
     #[tracing::instrument(skip(self), ret)]
     pub fn column(&self) -> Column {
-        self.column
+        self.column.clone()
     }
 
     #[tracing::instrument(skip(self))]
     pub fn set_column(&mut self, column: Column) {
-        self.column = column;
+        self.column = column.clone();
         assert_eq!(self.column(), column);
     }
 
     pub fn switch_column(&mut self) {
-        self.set_column(match self.column {
-            Column::Name => Column::Size,
-            Column::Size => Column::Name,
-        });
+        self.column.flip();
     }
 
     pub async fn add_entry(&self, new_entry: &DirEntry) {
@@ -56,10 +58,11 @@ impl Sorting {
         debug!("{column:?}");
         let mut unsorted = self.sorted.lock().await.clone();
         unsorted.sort_unstable_by(|a, b| {
-            match column {
-                Column::Name => a.original.entry.path().cmp(b.original.entry.path()),
+            match column.clone() {
+                column if column.is_name() => a.original.entry.path().cmp(b.original.entry.path()),
                 // Sorting is inverse here, because we want the larger size to be first
-                Column::Size => b.size.cmp(&a.size),
+                column if column.is_size() => b.size.cmp(&a.size),
+                _ => unreachable!(),
             }
         });
 
@@ -89,9 +92,9 @@ impl Sorting {
     }
 }
 
-#[derive(Default, Debug, Copy, Clone, PartialEq, Eq)]
-pub enum Column {
-    #[default]
-    Name,
-    Size,
-}
+// #[derive(Default, Debug, Copy, Clone, PartialEq, Eq)]
+// pub enum Column {
+//     #[default]
+//     Name,
+//     Size,
+// }
