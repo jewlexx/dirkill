@@ -849,9 +849,9 @@ dependencies = [
 
 [[package]]
 name = "quork"
-version = "0.8.2"
+version = "0.9.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6c593b7d0ef0a3100803a5fc419f0a6e51e9dd47ed76c1d74c7f5cd6e84cefd0"
+checksum = "6bd9640e0addc098a3481fd53bdc23970e5dd0edf6b349403aa680fb576c8f83"
 dependencies = [
  "cfg-if",
  "lock_api",
@@ -865,9 +865,9 @@ dependencies = [
 
 [[package]]
 name = "quork-proc"
-version = "0.4.1"
+version = "0.5.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0386bc87f6a1770b849cd7b1127499d9fe6526ea24cc267e0c89874bc7ae5e0c"
+checksum = "860d36740d9412e39fff90f57010e9870b15c2b48e5325295a6f5a824a480439"
 dependencies = [
  "proc-macro-crate",
  "proc-macro-error2",
