@@ -59,15 +59,9 @@ async fn main() {
     if app.run().await.is_err() {
         error!("Failed to run app");
     }
-    let handle = Handle::current();
-    let metrics = handle.metrics();
-    dbg!(metrics.num_alive_tasks());
 
     discovery_task.abort();
-    discovery_task.await.unwrap();
+    _ = discovery_task.await;
     sorting_task.abort();
     _ = sorting_task.await;
-
-    let metrics = handle.metrics();
-    dbg!(metrics.num_alive_tasks());
 }
