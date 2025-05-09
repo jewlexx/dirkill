@@ -6,6 +6,7 @@ use args::Args;
 use clap::Parser;
 use comms::Comms;
 use ratatui::style::Color;
+use spinners::{Spinner, Spinners};
 
 mod app;
 mod args;
@@ -55,8 +56,12 @@ async fn main() {
         error!("Failed to run app");
     }
 
+    let mut spinner = Spinner::new(Spinners::Dots, "Finishing up tasks...".into());
+
     discovery_task.abort();
     _ = discovery_task.await;
     sorting_task.abort();
     _ = sorting_task.await;
+
+    spinner.stop_with_symbol("\x1b[32m🗸\x1b[0m");
 }
