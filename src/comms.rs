@@ -41,12 +41,14 @@ impl Comms {
         self.loading.load(Ordering::Relaxed)
     }
 
+    #[track_caller]
+    #[tracing::instrument(skip(self))]
     pub fn set_changed(&self, changed: bool) {
-        self.changed.store(changed, Ordering::Relaxed);
+        self.changed.store(changed, Ordering::SeqCst);
     }
     #[must_use]
     pub fn changed(&self) -> bool {
-        self.changed.load(Ordering::Relaxed)
+        self.changed.load(Ordering::SeqCst)
     }
 
     pub async fn push_entry(&self, entry: DirEntry) -> Result<(), SendError<()>> {

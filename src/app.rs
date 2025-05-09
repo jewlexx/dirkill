@@ -156,9 +156,10 @@ impl App {
             let mut interval = tokio::time::interval(Duration::from_secs_f32(1.0 / 30.0));
             loop {
                 // Ui-run
+                debug!("Changed: {}", self.comms.changed());
                 if self.comms.changed() {
-                    terminal.draw(|f| self.ui(f))?;
                     self.comms.set_changed(false);
+                    terminal.draw(|f| self.ui(f))?;
                 }
 
                 if event::poll(Duration::ZERO)? {
