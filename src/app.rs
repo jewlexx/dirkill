@@ -153,14 +153,15 @@ impl App {
         let mut terminal = Terminal::new(CrosstermBackend::new(io::stdout()))?;
 
         tokio::spawn(async move {
-            let mut interval = tokio::time::interval(Duration::from_secs_f32(1.0 / 30.0));
+            let mut interval =
+                tokio::time::interval(Duration::from_millis(1000 / 24) /* 24fps */);
             loop {
                 // Ui-run
                 debug!("Changed: {}", self.comms.changed());
-                // if self.comms.changed() {
-                //     self.comms.set_changed(false);
-                terminal.draw(|f| self.ui(f))?;
-                // }
+                if self.comms.changed() {
+                    self.comms.set_changed(false);
+                    terminal.draw(|f| self.ui(f))?;
+                }
 
                 if event::poll(Duration::ZERO)? {
                     if let Event::Key(key) = event::read()? {
