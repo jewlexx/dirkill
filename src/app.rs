@@ -157,10 +157,10 @@ impl App {
             loop {
                 // Ui-run
                 debug!("Changed: {}", self.comms.changed());
-                if self.comms.changed() {
-                    self.comms.set_changed(false);
-                    terminal.draw(|f| self.ui(f))?;
-                }
+                // if self.comms.changed() {
+                //     self.comms.set_changed(false);
+                terminal.draw(|f| self.ui(f))?;
+                // }
 
                 if event::poll(Duration::ZERO)? {
                     if let Event::Key(key) = event::read()? {
