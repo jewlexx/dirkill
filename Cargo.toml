@@ -20,7 +20,7 @@ clap = { version = "4.5", features = ["derive"] }
 crossterm = "0.29"
 flume = "0.11"
 quork = { version = "0.9", features = ["lock_api", "spin"] }
-ratatui = "0.29"
+ratatui = "0.30"
 spinners = "4.1"
 strip-ansi-escapes = "0.2"
 tokio = { version = "1.42", features = ["full", "tracing"] }
